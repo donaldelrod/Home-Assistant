@@ -1,11 +1,11 @@
 [
     {
-        "proto" : "tplink",
+        "proto": "tplink",
         "devices": [
             {
-                "name"  : "Bedroom Lamp",
-                "kind"  : "plug",
-                "ip"    : "192.168.1.36"
+                "name": "Bedroom Lamp",
+                "kind": "plug",
+                "ip": "192.168.1.36"
             }
         ]
     }

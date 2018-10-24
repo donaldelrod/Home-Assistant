@@ -1,1 +1,4 @@
 node_modules
+modules.json
+devices.json
+gcal_credentials.json
