@@ -1,0 +1,24 @@
+{
+  "name": "home-assistant",
+  "version": "1.0.0",
+  "description": "Node frontend for home automation Raspberry Pi server",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/donaldelrod/Home-Assistant.git"
+  },
+  "author": "Donald Elrod",
+  "license": "SEE LICENSE IN license",
+  "bugs": {
+    "url": "https://github.com/donaldelrod/Home-Assistant/issues"
+  },
+  "homepage": "https://github.com/donaldelrod/Home-Assistant#readme",
+  "dependencies": {
+    "express": "^4.16.4",
+    "tplink-smarthome-api": "^0.23.0"
+  }
+}
