@@ -3,13 +3,18 @@ module.exports = {
         var toggle = state === undefined;
 
         if (toggle) {
-            if (device.deviceKind == 'tplink-plug' || device.deviceKind == 'tplink-bulb')
-                device.setPowerState(!device.relayState);
-            return;
-        } 
+            var power_state;
+            if (device.deviceKind == 'tplink-plug' || device.deviceKind == 'tplink-bulb') {
+                power_state = !device.relayState
+                device.setPowerState(power_state);
+            }
+            return power_state;
+        }
 
-        if (device.deviceKind == 'tplink-plug' || device.deviceKind == 'tplink-bulb')
+        if (device.deviceKind == 'tplink-plug' || device.deviceKind == 'tplink-bulb') {
             device.setPowerState(state);
+            return state;
+        }
     },
     turnOnDevice: function(device) {
         if (device.deviceKind == 'tplink-plug' || device.deviceKind == 'tplink-bulb')

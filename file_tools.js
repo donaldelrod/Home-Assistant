@@ -18,15 +18,15 @@ module.exports = {
     /**
      * Returns parsed JSON object from file at specified path
      * @param {string} file the path to the JSON file
-     * @param {function(json)} callback the function to call when the file has been read
-     * @return {JSON} JSON at file location
+     * @return {Promise} promise to JSON at file location
      */
     readJSONFile: function(file) {
-        //console.log(file);
+        
         return new Promise( function(resolve, reject) {
             try {
                 fs.readFile(file, function(err, data) {
-                    console.log('read JSON');
+                    //console.log(file);
+                    //console.log('read JSON');
                     resolve(JSON.parse(data));
                 });
             } catch (error) {
