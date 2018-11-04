@@ -1,8 +1,9 @@
 node_modules
 modules.json*
 devices.json*
-gcal_credentials.json*
-token.json*
+gcal_credentials*
+token*
 https_key.pem*
 https_cert.crt* 
 https_csr.pem*
+gmail_credentials*

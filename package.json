@@ -20,6 +20,8 @@
   "dependencies": {
     "express": "^4.16.4",
     "googleapis": "^34.0.0",
+    "netgear": "^3.0.8",
+    "open": "0.0.5",
     "proxmox": "^0.1.0",
     "tplink-smarthome-api": "^0.23.0"
   }

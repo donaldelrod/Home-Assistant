@@ -7,12 +7,15 @@ var options = {
     key: fs.readFileSync('./https_key.pem', 'utf8'),  
     cert: fs.readFileSync('./https_cert.crt', 'utf8')  
 }; 
+var open = require('open');
 
 
 //-------------API imports and Variables------------------------//
 const { Client } = require('tplink-smarthome-api');
 const TPClient = new Client();
 var prox;
+const NetgearRouter = require('netgear');
+var ngrouter;
 
 //-------------Google Imports and Variables---------------------//
 const readline = require('readline');
@@ -38,7 +41,7 @@ var modules = {};
 
 file_tools.readJSONFile(modulesPath).then(function(moduleList) {
     moduleList.forEach(function(type) {
-
+        //-------------Move to module_tools.js----------------//
         if (type.moduleName == 'proxmox') {
             try {
                 prox = require('proxmox')(type.details.user, type.details.password, type.details.ip);
@@ -53,8 +56,14 @@ file_tools.readJSONFile(modulesPath).then(function(moduleList) {
             file_tools.readJSONFile(type.details.credentials).then(function (content) {
                 authorize(content, type.details, function () { console.log('Google Calendar Connected Successfully')});
             });
+        } else if (type.moduleName == 'netgear') {
+            ngrouter =  new NetgearRouter(type.details.password, type.details.user, type.details.host, type.details.port);
+            ngrouter.discover().then(discovered => {
+                
+                console.log(discovered)
+            }).catch(err => console.log(err));
         }
-
+        //-----------------------------------------------------//
     });
 }); 
 
@@ -117,6 +126,9 @@ function getAccessToken(oAuth2Client, details, callback) {
       access_type: 'offline',
       scope: details.scopes,
     });
+    open(authUrl, function(err) {
+        if (err) console.log(err);
+    });
     console.log('Authorize this app by visiting this url:', authUrl);
     const rl = readline.createInterface({
       input: process.stdin,
@@ -166,6 +178,29 @@ function getGCalEvents(auth, numEvents) {
     });
 }
 
+/**
+ * Lists the labels in the user's account.
+ *
+ * @param {google.auth.OAuth2} auth An authorized OAuth2 client.
+ */
+function getGmailLabels(auth) {
+    const gmail = google.gmail({version: 'v1', auth});
+    gmail.users.labels.list({
+      userId: 'me',
+    }, (err, res) => {
+      if (err) return console.log('The API returned an error: ' + err);
+      const labels = res.data.labels;
+      if (labels.length) {
+        console.log('Labels:');
+        labels.forEach((label) => {
+          console.log(`- ${label.name}`);
+        });
+      } else {
+        console.log('No labels found.');
+      }
+    });
+  }
+
 var secureServer = https.createServer(options, app).listen(9876);
 
 app.route('/api/devices/:deviceID/info').get((req, res) => {
@@ -200,3 +235,7 @@ app.route('/api/gcal/upcoming').get((req, res) => {
         res.send(reason);
     });
 });
+
+app.route('/api/gmail/recent').get((req, res) => {
+    getGmailLabels(gcal_oauth);
+})
