@@ -30,7 +30,7 @@ module.exports = {
                     resolve(JSON.parse(data));
                 });
             } catch (error) {
-                reject([]);
+                reject('no file found');
             }
         });
     },

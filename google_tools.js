@@ -1,76 +1,107 @@
+var fs = require('fs');
+const { google } = require('googleapis');
+var open = require('open');
+
 module.exports = {
-    /**
+  /**
  * Create an OAuth2 client with the given credentials, and then execute the
  * given callback function.
- * @param {Object} credentials The authorization client credentials.
- * @param {function} callback The callback to call with the authorized client.
+ * @param {Object} details the details for Google services
+ * @param {Object} google_oauth the authorization object for google
  */
-authorize: function (credentials, callback) {
-    const {client_secret, client_id, redirect_uris} = credentials.installed;
-    const oAuth2Client = new google.auth.OAuth2(
-        client_id, client_secret, redirect_uris[0]);
-  
+  authorize: function (details, google_oauth) {
+    // const {client_secret, client_id, redirect_uris} = credentials.installed;
+    // google_oauth = new google.auth.OAuth2(
+    //     client_id, client_secret, redirect_uris[0]);
+
     // Check if we have previously stored a token.
-    fs.readFile(TOKEN_PATH, (err, token) => {
-        if (err) return getAccessToken(oAuth2Client, callback);
-        oAuth2Client.setCredentials(JSON.parse(token));
-        callback(oAuth2Client);
-      });
+    fs.readFile(details.token_path, (err, token) => {
+      if (err) return this.getAccessToken(google_oauth, details);
+      google_oauth.setCredentials(JSON.parse(token));
+      console.log('Google services connected successfully');
+    });
   },
-/**
- * Get and store new token after prompting for user authorization, and then
- * execute the given callback with the authorized OAuth2 client.
- * @param {google.auth.OAuth2} oAuth2Client The OAuth2 client to get token for.
- * @param {getEventsCallback} callback The callback for the authorized client.
- */
-getAccessToken: function (oAuth2Client, callback) {
-    const authUrl = oAuth2Client.generateAuthUrl({
+  /**
+   * Get and store new token after prompting for user authorization, and then
+   * execute the given callback with the authorized OAuth2 client.
+   * @param {google.auth.OAuth2} google_oauth The OAuth2 client to get token for.
+   * @param {Object} details info about where files are stored
+   */
+  getAccessToken: function (google_oauth, details) {
+    const authUrl = google_oauth.generateAuthUrl({
       access_type: 'offline',
-      scope: SCOPES,
+      scope: details.scopes,
     });
-    console.log('Authorize this app by visiting this url:', authUrl);
-    const rl = readline.createInterface({
-      input: process.stdin,
-      output: process.stdout,
+    open(authUrl, function (err) {
+      if (err) console.log(err);
     });
-    rl.question('Enter the code from that page here: ', (code) => {
-      rl.close();
-      oAuth2Client.getToken(code, (err, token) => {
-        if (err) return console.error('Error retrieving access token', err);
-        oAuth2Client.setCredentials(token);
-        // Store the token to disk for later program executions
-        fs.writeFile(TOKEN_PATH, JSON.stringify(token), (err) => {
-            if (err) console.error(err);
-            console.log('Token stored to', TOKEN_PATH);
-        });
-        callback(oAuth2Client);
+  },
+  /**
+   * 
+   * @param {Object} google_oauth OAuth2 client to save token for
+   * @param {String} code the response code from Google web callback
+   */
+  saveAccessToken: function (google_oauth, code) {
+    google_oauth.getToken(code, (err, token) => {
+      if (err) return console.error('Error retrieving access token', err);
+      google_oauth.setCredentials(token);
+      // Store the token to disk for later program executions
+      fs.writeFile('google_token.json', JSON.stringify(token), (err) => {
+        if (err) return err;
+        console.log('Token stored to', 'google_token.json');
+      });
+      console.log('Google services connected successfully');
+      return 'Google services connected successfully';
+    });
+  },
+  /**
+   * Lists the next 10 events on the user's primary calendar.
+   * @param {google.auth.OAuth2} auth An authorized OAuth2 client.
+   */
+  getGCalEvents: function (auth, numEvents) {
+    const calendar = google.calendar({ version: 'v3', auth });
+    //var eventData = [];
+    return new Promise(function (resolve, reject) {
+      calendar.events.list({
+        calendarId: 'primary',
+        timeMin: (new Date()).toISOString(),
+        maxResults: numEvents,
+        singleEvents: true,
+        orderBy: 'startTime',
+      }, (err, res) => {
+        if (err)
+          reject('The API returned an error: ' + err);
+        const events = res.data.items;
+        if (events.length)
+          resolve(events);
+        else {
+          reject('No upcoming events found.');
+          console.log('No upcoming events found.');
+        }
       });
     });
   },
   /**
- * Lists the next 10 events on the user's primary calendar.
- * @param {google.auth.OAuth2} auth An authorized OAuth2 client.
- */
-listEvents: function (auth) {
-    const calendar = google.calendar({version: 'v3', auth});
-    calendar.events.list({
-      calendarId: 'primary',
-      timeMin: (new Date()).toISOString(),
-      maxResults: 15,
-      singleEvents: true,
-      orderBy: 'startTime',
+   * Lists the labels in the user's account.
+   *
+   * @param {google.auth.OAuth2} auth An authorized OAuth2 client.
+   */
+  getGmailLabels: function (auth) {
+    const gmail = google.gmail({ version: 'v1', auth });
+    gmail.users.labels.list({
+      userId: 'me',
     }, (err, res) => {
       if (err) return console.log('The API returned an error: ' + err);
-      const events = res.data.items;
-      if (events.length) {
-        console.log('Upcoming 15 events:');
-        events.map((event, i) => {
-          const start = event.start.dateTime || event.start.date;
-          console.log(`${start} - ${event.summary}`);
+      const labels = res.data.labels;
+      if (labels.length) {
+        console.log('Labels:');
+        labels.forEach((label) => {
+          console.log(`- ${label.name}`);
         });
       } else {
-        console.log('No upcoming events found.');
+        console.log('No labels found.');
       }
     });
   }
+
 };
