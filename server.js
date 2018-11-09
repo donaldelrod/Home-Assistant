@@ -222,11 +222,10 @@ app.route('/api/devices/:deviceID/info').get((req, res) => {
 
 app.route('/api/devices/:deviceID/set/:state').get((req, res) => {
     var index = parseInt(req.params.deviceID);
-    try {
-        var device = devices[index];
-    } catch (err) {
+    var device = devices[index];
+    if (device === undefined) {
         res.send('requested device doesn\'t exist!');
-        return;
+        return
     }
     var state = req.params.state == 'on' ? true : (req.params.state == 'off' ? false : undefined);
     state = device_tools.setDeviceState(device, state);
