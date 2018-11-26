@@ -145,5 +145,6 @@ app.route('/api/modules/google/gmail/labels').get((req, res) => {
 });
 
 app.route('/plex/webhook').post((req, res) => {
+    console.log('post');
     console.log(req);
 });
