@@ -142,4 +142,8 @@ app.route('/api/modules/google/cal/upcoming').get((req, res) => {
 
 app.route('/api/modules/google/gmail/labels').get((req, res) => {
     google_tools.getGmailLabels(google_oauth);
-})
+});
+
+app.route('/plex/webhook').post((req, res) => {
+    console.log(req);
+});
