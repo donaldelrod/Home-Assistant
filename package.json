@@ -20,6 +20,8 @@
   "dependencies": {
     "express": "^4.16.4",
     "googleapis": "^34.0.0",
+    "harmonyhubjs-client": "^1.1.11",
+    "multer": "^1.4.1",
     "netgear": "^3.0.8",
     "open": "0.0.5",
     "proxmox": "^0.1.0",

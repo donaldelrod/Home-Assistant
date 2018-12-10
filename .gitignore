@@ -1,8 +1,8 @@
 node_modules
 modules.json*
 devices.json*
-*token*
+google_token*
 https_key.pem*
 https_cert.crt* 
 https_csr.pem*
-*credentials*
+google_credentials*

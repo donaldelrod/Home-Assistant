@@ -1,0 +1,30 @@
+*Pick And Place List
+*Company=
+*Author=
+*eMail=
+*
+*Project=arduino_temp_motion_rf_sensor
+*Date=16:09:42
+*CreatedBy=Fritzing 0.9.3b.04.19.5c895d327c44a3114e5fcc9d8260daf0cbb52806
+*
+*
+*Coordinates in mm, always center of component
+*Origin 0/0=Lower left corner of PCB
+*Rotation in degree (0-360, math. pos.)
+*
+*No;Value;Package;X;Y;Rotation;Side;Name
+1;;;10.287;-42.999;180;Bottom;PIR
+2;;;10.0584;-22.6328;0;Bottom;Via4
+3;330;THT;33.147;-48.079;-90;Bottom;R Red LED
+4;;3 mm [THT];26.1782;-58.2388;90;Bottom;Green LED (activity)
+5;330;THT;25.527;-48.079;90;Bottom;R Green LED
+6;;;32.6136;-13.4888;0;Bottom;Via1
+7;220;THT;56.007;-35.379;90;Bottom;Voltage Divider 1
+8;;;52.1759;-51.889;90;Bottom;DHT22
+9;;jst-3-pth;5.14697;-9.97896;-90;Bottom;JP2
+10;;;21.2851;-21.6075;180;Bottom;Arduino Pro Mini 5V
+11;;3 mm [THT];33.7982;-58.2388;90;Bottom;Red LED (no connection)
+12;;;35.052;-12.8792;0;Bottom;Via2
+13;;;50.593;-14.4441;90;Bottom;NRF24L01 Wireless Transceiver
+14;330;THT;48.387;-35.379;90;Bottom;Voltage Divider 2
+15;;;42.9768;-18.3656;0;Bottom;Via3

@@ -69,8 +69,10 @@ module.exports = {
         singleEvents: true,
         orderBy: 'startTime',
       }, (err, res) => {
-        if (err || res === undefined)
+        if (err || res === undefined) {
           reject('The API returned an error: ' + err);
+          return;
+        }
         const events = res.data.items;
         if (events.length)
           resolve(events);
