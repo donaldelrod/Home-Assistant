@@ -144,19 +144,19 @@ file_tools.readJSONFile(modulesPath).then(function(moduleList) {
 }); 
 
 //some cleaning on exit from the program
-process.on('exit', (code) => {
+process.on('beforeExit', function(code) {
     console.log('exit code: ' + code);
     modules.harmony.hub.end();
     modules.netgearRouter.logout();
     var writableDevices = device_tools.getWritableDevices(devices);
     var writableProfiles = device_tools.getWritableProfiles(profiles);
     var writableActivities = device_tools.getWritableActivities(activities);
-    file_tools.writeJSONFile(devicesPath, writableDevices, function() {console.log('saved devices')});
-    file_tools.writeJSONFile(profilesPath, writableProfiles, function() {console.log('saved profiles')});
-    file_tools.writeJSONFile(activitiesPath, writableActivities, function() {console.log('saved activities')});
+    //file_tools.writeJSONFile(devicesPath, writableDevices, function() {console.log('saved devices')});
+    //file_tools.writeJSONFile(profilesPath, writableProfiles, function() {console.log('saved profiles')});
+    //file_tools.writeJSONFile(activitiesPath, writableActivities, function() {console.log('saved activities')});
     
     //file_tools.writeJSONFile('./modules.json', modules, function() {console.log('saved modules')});
-    setTimeout(console.log('safely exiting the program'), 5000);
+    console.log('safely exiting the program');
 });
 
 //reads devices.json for list of controlled devices
