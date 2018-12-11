@@ -143,11 +143,18 @@ file_tools.readJSONFile(modulesPath).then(function(moduleList) {
     });
 }); 
 
-process.on('exit', function(code) {
+//some cleaning on exit from the program
+process.on('exit', (code) => {
     console.log('exit code: ' + code);
     modules.harmony.hub.end();
+    modules.netgearRouter.logout();
     var writableDevices = device_tools.getWritableDevices(devices);
-    file_tools.writeJSONFile('./devices.json', writableDevices, function() {console.log('saved devices')});
+    var writableProfiles = device_tools.getWritableProfiles(profiles);
+    var writableActivities = device_tools.getWritableActivities(activities);
+    file_tools.writeJSONFile(devicesPath, writableDevices, function() {console.log('saved devices')});
+    file_tools.writeJSONFile(profilesPath, writableProfiles, function() {console.log('saved profiles')});
+    file_tools.writeJSONFile(activitiesPath, writableActivities, function() {console.log('saved activities')});
+    
     //file_tools.writeJSONFile('./modules.json', modules, function() {console.log('saved modules')});
     setTimeout(console.log('safely exiting the program'), 5000);
 });
@@ -182,13 +189,20 @@ file_tools.readJSONFile(devicesPath).then(function(deviceList) {
 //loads activities and schedules repetitive activities
 file_tools.readJSONFile(activitiesPath).then(function(activityList) {
     activities = activityList;
-    activities.filter((eachActivity) => {
+    var activitiesToSchedule = activities.filter((eachActivity) => {
         return eachActivity.triggers.timeofday !== undefined;
-    }).map((scheduledActivity) => {
-        var cronStr = scheduledActivity.triggers.timeofday;
-        var j = schedule.scheduleJob(cronStr, device_tools.runActivity(modules, activities, devices, scheduledActivity.name));
-        scheduledFunctions.push(j);
     });
+    if (activitiesToSchedule.length > 0) {
+        activitiesToSchedule.map((scheduledActivity) => {
+            var cronStr = scheduledActivity.triggers.timeofday;
+            var j = schedule.scheduleJob(cronStr, function(fireTime) {
+                device_tools.runActivity(modules, activities, devices, scheduledActivity.name);
+                console.log(scheduledActivity.name + ' ran at ' + fireTime);
+            });
+            j.jobname = scheduledActivity.name;
+            scheduledFunctions.push(j);
+        });
+    }
 });
 
 function checkWhoIsHome() {
@@ -196,6 +210,7 @@ function checkWhoIsHome() {
     console.log('checking who is home');
     
     modules.netgearRouter.getAttachedDevices().then((attached) => {
+        modules.netgearRouter.lastConnectedDevices = attached;
         profiles.forEach(function(profile) {
             var profileDevices = attached.filter((attd) => {
                 return profile.identifiers.ip.includes(attd.IP)
@@ -206,15 +221,12 @@ function checkWhoIsHome() {
     });
 }
 
-
-
-
-
 var nonsecureServer = http.createServer(app).listen(9875);
 var secureServer = https.createServer(options, app).listen(9876);
 
 //----------------Device API
 
+//lists all the currently known/controllable devices
 app.route('/api/devices/list').get((req, res) => {
     
     var dev_list = devices.map((d, ind) => {
@@ -229,7 +241,7 @@ app.route('/api/devices/list').get((req, res) => {
     res.send(dev_list);
 });
 
-
+//gets info about the specific device
 app.route('/api/devices/:deviceID/info').get((req, res) => {
     var index = parseInt(req.params.deviceID);
     if (devices[index].deviceProto === 'tplink') {
@@ -241,7 +253,7 @@ app.route('/api/devices/:deviceID/info').get((req, res) => {
     }
 });
 
-
+//sets the state of an individual device
 app.route('/api/devices/:deviceID/set/:state').get((req, res) => {
     var index = parseInt(req.params.deviceID);
     var device = devices[index];
@@ -255,6 +267,7 @@ app.route('/api/devices/:deviceID/set/:state').get((req, res) => {
     res.send("device " + index + ' turned ' + (state == true ? 'on' : 'off'));
 });
 
+//controls the state of a group of devices
 app.route('/api/groups/:control').get((req, res) => {
     var groups = req.query.groups;
     var control = parseInt(req.params.control);
@@ -292,7 +305,8 @@ app.route('/api/groups/:control').get((req, res) => {
     res.send('success');
 });
 
-app.route('/api/activities/:name').get((req, res) => {
+//runs the activity with the name :name
+app.route('/api/activities/name/:name').get((req, res) => {
     device_tools.runActivity(modules, activities, devices, req.params.name);
     res.sendStatus(200);
 });
@@ -300,16 +314,26 @@ app.route('/api/activities/:name').get((req, res) => {
 //returns the list of people at the house
 app.route('/api/people/list').get((req, res) => {
     res.json(profiles);
-})
+});
+
+//return all scheduled activities
+app.route('/api/activities/scheduled').get((req, res) => {
+    var sch = scheduledFunctions.map((eachFunction) => {
+        return eachFunction.jobname;
+    });
+    res.json(sch);
+});
 
 //-----------------Google API
 
+//the OAuth2 endpoint of the server so you can log in
 app.route('/oauth2/google').get((req, res) => {
     var token_code = req.query.code;
     var scope_oauth = req.query.scope;
     res.send(google_tools.saveAccessToken(google_oauth, token_code));
 });
 
+//gets upcoming events in your Google Calendar
 app.route('/api/modules/google/cal/upcoming').get((req, res) => {
     google_tools.getGCalEvents(google_oauth, 15).then(function (events) {
         res.json(events);
@@ -325,9 +349,11 @@ app.route('/api/modules/google/gmail/labels').get((req, res) => {
 
 //-------------------------Netgear API
 
+//returns all the devices connected to the netgear router
 app.route('/api/netgearrouter/attached').get((req, res) => {
-    modules.netgearRouter.login();
+    //modules.netgearRouter.login();
     modules.netgearRouter.getAttachedDevices().then(function(attached) {
+        modules.netgearRouter.lastConnectedDevices = attached;
         res.send(attached);
         console.log(attached);
     });

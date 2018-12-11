@@ -99,6 +99,18 @@ module.exports = {
         });
         return writableDevices;
     },
+    getWritableModules: function(modules) {
+        console.log(modules);
+        return modules; //this is definitely not right, might have to edit modules only when changes are made to the config
+    },
+    getWritableProfiles: function(profiles) {
+        console.log(profiles);
+        return profiles;
+    },
+    getWritableActivities: function(activities) {
+        console.log(activities);
+        return activities;
+    },
     runActivity: function(modules, activities, devices, activityName) {
         var activity = activities.find((eachActivity) => {
             return eachActivity.name.toLowerCase() === activityName.toLowerCase();
