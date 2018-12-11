@@ -42,7 +42,8 @@ module.exports = {
      */
     writeJSONFile: function(file, json, callback) {
         fs.writeFile(file, JSON.stringify(json), function (err) {
-            if (err) throw err;
+            if (err) 
+                throw err;
             else {
                 console.log('wrote JSON');
                 callback(json);

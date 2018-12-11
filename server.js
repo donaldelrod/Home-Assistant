@@ -11,6 +11,8 @@ var options = {
 var open = require('open');
 var multer = require('multer');
 var upload = multer({dest: '/plexpass/'});
+var schedule = require('node-schedule');
+var scheduledFunctions = [];
 
 
 //-------------API imports and Variables------------------------//
@@ -21,7 +23,7 @@ const NetgearRouter = require('netgear');
 var ngrouter;
 var routerDetails;
 var harmony = require('harmonyhubjs-client');
-//var harmonyHub;
+const TuyAPI = require('tuyapi');
 
 //-------------Google Imports and Variables---------------------//
 //const readline = require('readline');
@@ -42,8 +44,16 @@ const programPath = __dirname;
 let settings;
 var modulesPath = './modules.json';
 var devicesPath = './devices.json'; 
+var activitiesPath = './activities.json';
+var profilesPath = './profiles.json';
 var devices = [];
 var modules = {};
+var activities = [];
+var profiles = [];
+
+file_tools.readJSONFile(profilesPath).then(function(profileList) {
+    profiles = profileList;
+});
 
 
 //process all modules in the modules.json file
@@ -58,9 +68,7 @@ file_tools.readJSONFile(modulesPath).then(function(moduleList) {
                 console.log('Proxmox connected Successfully');
             } catch(err) {
                 console.log(err);
-            }
-            
-            //prox_tools.getClusterStatus(prox);
+            }            
         } else if (type.moduleName == 'google') {
             file_tools.readJSONFile(type.details.credentials).then(function (content) {
                 const {client_secret, client_id, redirect_uris} = content.installed;
@@ -72,7 +80,9 @@ file_tools.readJSONFile(modulesPath).then(function(moduleList) {
         } else if (type.moduleName == 'netgear') {
             modules.netgearRouter =  new NetgearRouter(type.details.password, type.details.user, type.details.host, type.details.port);
             modules.netgearRouter.routerDetails = modules.netgearRouter.discover().then(discovered => {
-                console.log('Netgear Router connected successfully')
+                console.log('Netgear Router connected successfully');
+                checkWhoIsHome();
+                setInterval(checkWhoIsHome, 300000);
                 return discovered;
             }).catch(err => console.log(err));
         } else if (type.moduleName == 'harmony') {
@@ -83,14 +93,17 @@ file_tools.readJSONFile(modulesPath).then(function(moduleList) {
                 modules.harmony.hub.getAvailableCommands().then(function(rawCommands) {
                     var tempHarmonyDevice;
 
-
                     var harmonyDevices = []; //what will be set to modules.harmony.devices
                     rawCommands.device.forEach(function(rawDevice) {
                         tempHarmonyDevice = {
-                            deviceName: rawDevice.label,
+                            name: rawDevice.label,
+                            deviceProto: 'harmony',
+                            deviceKind: 'harmony-'+rawDevice.type,
+                            deviceType: rawDevice.type,
+                            ip: "",
+                            groups: [],
                             controlPort: rawDevice.ControlPort,
                             manufacturer: rawDevice.manufacturer,
-                            deviceType: rawDevice.type,//displayTypeDisplayName,
                             harmonyProfile: rawDevice.deviceProfileUri,
                             deviceModel: rawDevice.model,
                             isManualPower: rawDevice.isManualPower,
@@ -111,63 +124,121 @@ file_tools.readJSONFile(modulesPath).then(function(moduleList) {
                             tempHarmonyDevice.controlGroups.push(tempCG);
                         });
                         harmonyDevices.push(tempHarmonyDevice);
+                        var inDevices = false;
+                        devices.forEach(function(d) {
+                            if (d.name === tempHarmonyDevice.name)
+                                inDevices = true;
+                        });
+                        //only push to devices if the device is new, so harmony devices can be 
+                        //stored and further customized in the program
+                        //devices are saved to devices.json after being added once
+                        if (!inDevices)
+                            devices.push(tempHarmonyDevice);
                     });
-
                     modules.harmony.devices = harmonyDevices;
-
                 });
-            }).catch(function(err) {
-                console.log(err);
-            });
-            console.log('Harmony Hub connected successfully')
+            }).catch(err => console.log(err));
+            console.log('Harmony Hub connected successfully');
         }
     });
 }); 
 
 process.on('exit', function(code) {
+    console.log('exit code: ' + code);
     modules.harmony.hub.end();
-    console.log('safely exiting the program');
-})
-
+    var writableDevices = device_tools.getWritableDevices(devices);
+    file_tools.writeJSONFile('./devices.json', writableDevices, function() {console.log('saved devices')});
+    //file_tools.writeJSONFile('./modules.json', modules, function() {console.log('saved modules')});
+    setTimeout(console.log('safely exiting the program'), 5000);
+});
 
 //reads devices.json for list of controlled devices
 file_tools.readJSONFile(devicesPath).then(function(deviceList) {
-    deviceList.forEach(function(type) {
-
-        //move this to device_tools------------------------------------------------
-        if (type.proto == 'tplink') {
-            type.devices.forEach(function(device) {
-                var tempDevice;
-                try {
-                    tempDevice = device;
-                    if (device.deviceKind == 'tplink-plug') 
-                        tempDevice.obj = TPClient.getPlug({host: device.ip});
-                    else if (device.deviceKind == 'tplink-bulb') 
-                        tempDevice.obj = TPClient.getBulb({host: device.ip});
-
-                    //tempDevice.deviceName = device.name;
-                    devices.push(tempDevice);
-                    console.log(tempDevice.deviceKind + ' ' + tempDevice.name + ' conected successfully');
-                } catch (err) {
-                    console.log(err);
-                }
-            });
-            //---------------------------------------------------------------------
+    deviceList.forEach(function(device) {
+        var tempDevice;
+        try {
+            tempDevice = device;
+            if (device.deviceKind === 'tplink-plug') 
+                tempDevice.obj = TPClient.getPlug({host: device.ip});
+            else if (device.deviceKind === 'tplink-bulb') 
+                tempDevice.obj = TPClient.getBulb({host: device.ip});
+            else if (device.deviceProto === 'harmony') {
+                //don't think I need to do anything here but saving this space in case I do
+            } else if (device.deviceProto === 'tuyapi') {
+                tempDevice.obj = new TuyAPI({
+                    id: device.id,
+                    key: device.key,
+                    ip: device.ip
+                });
+            }
+            devices.push(tempDevice);
+            console.log(tempDevice.deviceKind + ' ' + tempDevice.name + ' conected successfully');
+        } catch (err) {
+            console.log(err);
         }
-    })
+    });
 });
+
+//loads activities and schedules repetitive activities
+file_tools.readJSONFile(activitiesPath).then(function(activityList) {
+    activities = activityList;
+    activities.filter((eachActivity) => {
+        return eachActivity.triggers.timeofday !== undefined;
+    }).map((scheduledActivity) => {
+        var cronStr = scheduledActivity.triggers.timeofday;
+        var j = schedule.scheduleJob(cronStr, device_tools.runActivity(modules, activities, devices, scheduledActivity.name));
+        scheduledFunctions.push(j);
+    });
+});
+
+function checkWhoIsHome() {
+    //var attachedDevices;
+    console.log('checking who is home');
+    
+    modules.netgearRouter.getAttachedDevices().then((attached) => {
+        profiles.forEach(function(profile) {
+            var profileDevices = attached.filter((attd) => {
+                return profile.identifiers.ip.includes(attd.IP)
+            });
+            profile.strength = profileDevices.length;
+            profile.devices = profileDevices;
+        });
+    });
+}
+
+
+
 
 
 var nonsecureServer = http.createServer(app).listen(9875);
 var secureServer = https.createServer(options, app).listen(9876);
 
+//----------------Device API
+
+app.route('/api/devices/list').get((req, res) => {
+    
+    var dev_list = devices.map((d, ind) => {
+        return {
+            name: d.name, 
+            proto: d.deviceProto,
+            groups: d.groups,
+            deviceID: ind
+        };
+    })
+    console.log(dev_list);
+    res.send(dev_list);
+});
+
+
 app.route('/api/devices/:deviceID/info').get((req, res) => {
     var index = parseInt(req.params.deviceID);
-    var device = devices[index].getSysInfo().then(function (deviceInfo) {
-        res.json(deviceInfo);
-    }).catch(function (reason) {
-        res.send(reason);
-    });
+    if (devices[index].deviceProto === 'tplink') {
+        devices[index].getSysInfo().then(function (deviceInfo) {
+            res.json(deviceInfo);
+        }).catch(function (reason) {
+            res.send(reason);
+        });
+    }
 });
 
 
@@ -178,8 +249,9 @@ app.route('/api/devices/:deviceID/set/:state').get((req, res) => {
         res.send('requested device doesn\'t exist!');
         return;
     }
-    var state = req.params.state == 'on' ? true : (req.params.state == 'off' ? false : undefined);
-    state = device_tools.setDeviceState(device, state);
+    var state = req.params.state === '1' ? true : (req.params.state === '0' ? false : undefined);
+    
+    state = device_tools.setDeviceState(device, state, modules);
     res.send("device " + index + ' turned ' + (state == true ? 'on' : 'off'));
 });
 
@@ -201,17 +273,17 @@ app.route('/api/groups/:control').get((req, res) => {
     switch (control) {
         case 0: //turn off group
             controlGroup.forEach(function(device) {
-                device_tools.setDeviceState(device, false);
+                device_tools.setDeviceState(device, false, modules);
             });
             break;
         case 1: //turn on group
             controlGroup.forEach(function(device) {
-                device_tools.setDeviceState(device, true);
+                device_tools.setDeviceState(device, true, modules);
             });
             break;
         case 2: //toggle group
             controlGroup.forEach(function(device) {
-                device_tools.setDeviceState(device, undefined);
+                device_tools.setDeviceState(device, undefined, modules);
             });
             break;
         default:
@@ -219,6 +291,18 @@ app.route('/api/groups/:control').get((req, res) => {
     }
     res.send('success');
 });
+
+app.route('/api/activities/:name').get((req, res) => {
+    device_tools.runActivity(modules, activities, devices, req.params.name);
+    res.sendStatus(200);
+});
+
+//returns the list of people at the house
+app.route('/api/people/list').get((req, res) => {
+    res.json(profiles);
+})
+
+//-----------------Google API
 
 app.route('/oauth2/google').get((req, res) => {
     var token_code = req.query.code;
@@ -239,7 +323,10 @@ app.route('/api/modules/google/gmail/labels').get((req, res) => {
     res.sendStatus(200);
 });
 
+//-------------------------Netgear API
+
 app.route('/api/netgearrouter/attached').get((req, res) => {
+    modules.netgearRouter.login();
     modules.netgearRouter.getAttachedDevices().then(function(attached) {
         res.send(attached);
         console.log(attached);
@@ -250,35 +337,46 @@ app.route('/api/netgearrouter/info').get((req, res) => {
     modules.netgearRouter.getInfo().then(function(info) {
         res.send(info);
         console.log(info);
-    })
+    });
 });
+
+//-------------Harmony API
 
 app.route('/api/modules/harmony/devices').get((req, res) => {
     res.json(modules.harmony.devices);
 });
 
 app.route('/api/modules/harmony/control/:device_name/:control_group/:control').get((req, res) => {
-    var selectedDevice = modules.harmony.devices.find((eachDevice) => {
-        return eachDevice.deviceName === req.params.device_name;
-    });
-    var selectedCG = selectedDevice.controlGroups.find((cg) => {
-            return cg.name === req.params.control_group;
-    });
-    var selectedControl = selectedCG.controls.find((thisControl) => {
-        return thisControl.name === req.params.control;
-    });
-    modules.harmony.hub.send('holdAction', 'action=' + selectedControl.formattedCommand + ':status=press');
-
+    var selectedControl = device_tools.getHarmonyControl(modules, req.params.device_name, req.params.control_group, req.params.control);
+    
+    device_tools.sendHarmonyCommand(modules, selectedControl.formattedCommand);
+    //modules.harmony.hub.send('holdAction', 'action=' + selectedControl.formattedCommand + ':status=press');
     res.sendStatus(200);
-})
+});
+
+//------------------Plex API
 
 app.route('/plex/webhook').post(upload.single('thumb'), (req, res, next) => {
     var payload = JSON.parse(req.body.payload);
     console.log(payload);
 
+    activities.filter((eachActivity) => {
+        return eachActivity.triggers.plex !== undefined;
+    }).map((plexActivity) => {
+        var triggerSpecs = plexActivity.triggers.plex;
+        var eventMatch = triggerSpecs.event === undefined || triggerSpecs.event.includes(payload.event);
+        var accountMatch = triggerSpecs.account === undefined || triggerSpecs.account.includes(payload.Account.title.toLowerCase());
+        var playerMatch = triggerSpecs.player === undefined || triggerSpecs.player.includes(payload.Player.uuid);
+        if (eventMatch && accountMatch && playerMatch) {
+            device_tools.runActivity(modules, activities, devices, plexActivity.name);
+        }
+    });
+
+
+    /*
     if (payload.event == 'media.play' && payload.Account.title == 'donaldelrod' && Player.title == 'PS4') {
         //add code here to turn off all lights in room but turn on PS4 sign
-    }
+    }*/
 
     res.sendStatus(200);
 });
