@@ -9,6 +9,7 @@ module.exports = {
             if (device.deviceProto === 'tplink') {
                 power_state = !device.obj.relayState
                 device.obj.setPowerState(power_state);
+                device.lastState = power_state;
             } else if (device.deviceProto === 'tuyapi') {
                 device.obj.get().then(status => {
                     power_state = !status;
@@ -16,11 +17,13 @@ module.exports = {
                         if (result)
                             console.log('status change succeeded');
                         else console.log('status change failed');
+                        device.lastState = !status;
                     });
                 }).catch(err => console.log(err));
             } else if (device.deviceProto === 'harmony') {
                 var powerControl = this.getHarmonyControl(modules, device.name, 'Power', 'PowerToggle');
                 this.sendHarmonyCommand(modules, powerControl.formattedCommand);
+                device.lastState = device.lastState === undefined ? undefined : !device.lastState;
             }
             return power_state;
         }
@@ -28,21 +31,25 @@ module.exports = {
         if (device.deviceProto === 'tplink') {
             device.obj.setPowerState(state);
             power_state = state;
+            device.lastState = state;
         } else if (device.deviceProto === 'tuyapi') {
             device.obj.set({set: state}).then(result => {
                 power_state = state;
-                if (result)
+                if (result) {
                     console.log('successfully set state to true');
+                    device.lastState = state;
+                }
                 else console.log('failed to set state to true');
             }).catch(err => console.log(err));
             
         }
         else if (device.deviceProto === 'harmony') {
-            var control = state == true ? 'PowerOn' : 'PowerOff';
+            var control = state === true ? 'PowerOn' : 'PowerOff';
             var powerControl = this.getHarmonyControl(modules, device.name, 'Power', control);
             this.sendHarmonyCommand(modules, powerControl.formattedCommand);
             //modules.harmony.hub.send('holdAction', 'action=' + powerControl.formattedCommand + ':status=press');
             power_state = state;
+            device.lastState = state;
         }
         return power_state;
     },
@@ -137,8 +144,22 @@ module.exports = {
                 var control = controlParams[2];
                 var selectedControl = this.getHarmonyControl(modules, commandingDevice.name, controlGroup, control);
                 this.sendHarmonyCommand(modules, selectedControl.formattedCommand);
+
+                //update last state of device if the is a power command
+                if (controlGroup === 'Power')
+                    commandingDevice.lastState = control === 'PowerOn' ? true : false;
             }
         });
+    },
+    getDeviceState(device) {
+        if (device.deviceProto === 'tplink') {
+            return device.obj.relayState;
+        } else if (device.deviceProto === 'tuyapi') {
+            var state;
+            return device.obj.get().then( (status) => {
+                return status;
+            });
+        }
     }
 
 };

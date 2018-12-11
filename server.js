@@ -26,7 +26,6 @@ var harmony = require('harmonyhubjs-client');
 const TuyAPI = require('tuyapi');
 
 //-------------Google Imports and Variables---------------------//
-//const readline = require('readline');
 const { google } = require('googleapis');
 let google_oauth;
 
@@ -60,7 +59,7 @@ file_tools.readJSONFile(profilesPath).then(function(profileList) {
 file_tools.readJSONFile(modulesPath).then(function(moduleList) {
        
     moduleList.forEach(function(type) {
-
+        //deal with proxmox setup
         if (type.moduleName == 'proxmox') {
             try {
                 prox = require('proxmox')(type.details.user, type.details.password, type.details.ip);
@@ -69,7 +68,9 @@ file_tools.readJSONFile(modulesPath).then(function(moduleList) {
             } catch(err) {
                 console.log(err);
             }            
-        } else if (type.moduleName == 'google') {
+        } 
+        //deal with google account setup
+        else if (type.moduleName == 'google') {
             file_tools.readJSONFile(type.details.credentials).then(function (content) {
                 const {client_secret, client_id, redirect_uris} = content.installed;
                 google_oauth = new google.auth.OAuth2(
@@ -77,15 +78,24 @@ file_tools.readJSONFile(modulesPath).then(function(moduleList) {
                 
                 google_tools.authorize(type.details, google_oauth);
             });
-        } else if (type.moduleName == 'netgear') {
-            modules.netgearRouter =  new NetgearRouter(type.details.password, type.details.user, type.details.host, type.details.port);
+        } 
+        //deal with netger router setup
+        else if (type.moduleName == 'netgear') {
+            modules.netgearRouter =  new NetgearRouter(type.details.password, type.details.username, type.details.host, type.details.port);
+            modules.netgearRouter.storedPass = type.details.password;
+            modules.netgearRouter.storedUser = type.details.username;
+            modules.netgearRouter.storedHost = type.details.host;
+            modules.netgearRouter.storedPort = type.details.port;
+            
             modules.netgearRouter.routerDetails = modules.netgearRouter.discover().then(discovered => {
                 console.log('Netgear Router connected successfully');
                 checkWhoIsHome();
                 setInterval(checkWhoIsHome, 300000);
                 return discovered;
             }).catch(err => console.log(err));
-        } else if (type.moduleName == 'harmony') {
+        } 
+        //deal with harmony hub setup
+        else if (type.moduleName == 'harmony') {
             modules.harmony = {};
             harmony(type.details.host).then(function(hub) {
                 modules.harmony.hub = hub;
@@ -159,6 +169,19 @@ process.on('beforeExit', function(code) {
     console.log('safely exiting the program');
 });
 
+function pollDevices() {
+    console.log('polling devices');
+    devices.forEach( (eachDevice) => {
+        if (eachDevice.deviceProto === 'tplink' || eachDevice.deviceProto == 'tuyapi') {
+            var state = device_tools.getDeviceState(eachDevice);
+            Promise.resolve(state).then((newState) => {
+                eachDevice.lastState = newState;
+                //console.log(eachDevice.name + ' is ' + newState);
+            }).catch(err => console.log(err));
+        }
+    });
+}
+
 //reads devices.json for list of controlled devices
 file_tools.readJSONFile(devicesPath).then(function(deviceList) {
     deviceList.forEach(function(device) {
@@ -184,6 +207,8 @@ file_tools.readJSONFile(devicesPath).then(function(deviceList) {
             console.log(err);
         }
     });
+    pollDevices();
+    setInterval(pollDevices, 150000);
 });
 
 //loads activities and schedules repetitive activities
@@ -208,17 +233,20 @@ file_tools.readJSONFile(activitiesPath).then(function(activityList) {
 function checkWhoIsHome() {
     //var attachedDevices;
     console.log('checking who is home');
-    
-    modules.netgearRouter.getAttachedDevices().then((attached) => {
-        modules.netgearRouter.lastConnectedDevices = attached;
-        profiles.forEach(function(profile) {
-            var profileDevices = attached.filter((attd) => {
-                return profile.identifiers.ip.includes(attd.IP)
+    modules.netgearRouter.login(modules.netgearRouter.storedPass, modules.netgearRouter.storedUser, modules.netgearRouter.storedHost, modules.netgearRouter.storedPort).then(function(successfulLogin) {
+        if (successfulLogin) {
+            modules.netgearRouter.getAttachedDevices().then((attached) => {
+                modules.netgearRouter.lastConnectedDevices = attached;
+                profiles.forEach(function(profile) {
+                    var profileDevices = attached.filter((attd) => {
+                        return profile.identifiers.ip.includes(attd.IP)
+                    });
+                    profile.strength = profileDevices.length;
+                    profile.devices = profileDevices;
+                });
             });
-            profile.strength = profileDevices.length;
-            profile.devices = profileDevices;
-        });
-    });
+        }
+    }).catch(err => console.log(err));
 }
 
 var nonsecureServer = http.createServer(app).listen(9875);
@@ -234,7 +262,8 @@ app.route('/api/devices/list').get((req, res) => {
             name: d.name, 
             proto: d.deviceProto,
             groups: d.groups,
-            deviceID: ind
+            deviceID: ind,
+            lastState: d.lastState
         };
     })
     console.log(dev_list);
@@ -324,7 +353,7 @@ app.route('/api/activities/scheduled').get((req, res) => {
     res.json(sch);
 });
 
-//-----------------Google API
+//-------------------------------Google API
 
 //the OAuth2 endpoint of the server so you can log in
 app.route('/oauth2/google').get((req, res) => {
@@ -352,10 +381,14 @@ app.route('/api/modules/google/gmail/labels').get((req, res) => {
 //returns all the devices connected to the netgear router
 app.route('/api/netgearrouter/attached').get((req, res) => {
     //modules.netgearRouter.login();
-    modules.netgearRouter.getAttachedDevices().then(function(attached) {
-        modules.netgearRouter.lastConnectedDevices = attached;
-        res.send(attached);
-        console.log(attached);
+    modules.netgearRouter.login(modules.netgearRouter.storedPass, modules.netgearRouter.storedUser, modules.netgearRouter.storedHost, modules.netgearRouter.storedPort).then(function(successfulLogin) {
+        if (successfulLogin) {
+            modules.netgearRouter.getAttachedDevices().then(function(attached) {
+                modules.netgearRouter.lastConnectedDevices = attached;
+                res.send(attached);
+                console.log(attached);
+            });
+        }
     });
 });
 
@@ -366,7 +399,7 @@ app.route('/api/netgearrouter/info').get((req, res) => {
     });
 });
 
-//-------------Harmony API
+//---------------------------Harmony API
 
 app.route('/api/modules/harmony/devices').get((req, res) => {
     res.json(modules.harmony.devices);
@@ -397,12 +430,6 @@ app.route('/plex/webhook').post(upload.single('thumb'), (req, res, next) => {
             device_tools.runActivity(modules, activities, devices, plexActivity.name);
         }
     });
-
-
-    /*
-    if (payload.event == 'media.play' && payload.Account.title == 'donaldelrod' && Player.title == 'PS4') {
-        //add code here to turn off all lights in room but turn on PS4 sign
-    }*/
 
     res.sendStatus(200);
 });
