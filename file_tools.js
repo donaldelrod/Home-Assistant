@@ -18,10 +18,9 @@ module.exports = {
     /**
      * Returns parsed JSON object from file at specified path
      * @param {string} file the path to the JSON file
-     * @return {Promise} promise to JSON at file location
+     * @return {Promise<JSON>} promise to JSON at file location
      */
-    readJSONFile: function(file) {
-        
+    readJSONFile: async function(file) {
         return new Promise( function(resolve, reject) {
             try {
                 fs.readFile(file, function(err, data) {

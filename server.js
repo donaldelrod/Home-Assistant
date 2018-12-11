@@ -7,7 +7,7 @@ var app             = express();
 var options         =   {  
                             key: fs.readFileSync('./https_key.pem', 'utf8'),  
                             cert: fs.readFileSync('./https_cert.crt', 'utf8')  
-                        }; 
+                        };
 var multer          = require('multer');
 var upload          = multer({dest: '/plexpass/'});
 var schedule        = require('node-schedule');
@@ -17,7 +17,7 @@ var scheduledFunctions = [];
 //-------------API imports and Variables------------------------//
 const { Client }    = require('tplink-smarthome-api');
 const TPClient      = new Client();
-var prox;
+var proxmox            = require('proxmox');
 const NetgearRouter = require('netgear');
 var harmony         = require('harmonyhubjs-client');
 const TuyAPI        = require('tuyapi');
@@ -26,14 +26,12 @@ const TuyAPI        = require('tuyapi');
 const { google }    = require('googleapis');
 let google_oauth;
 
-
 //-------------personal modules--------------------------------//
 var file_tools      = require('./file_tools.js');
 var device_tools    = require('./device_tools.js');
 var prox_tools      = require('./prox_tools.js');
 var google_tools    = require('./google_tools.js');
 var module_tools    = require('./module_tools.js');
-
 
 //-------------Program Variables------------------------------//
 const programPath   = __dirname;
@@ -42,34 +40,83 @@ var devicesPath     = './devices.json';
 var activitiesPath  = './activities.json';
 var profilesPath    = './profiles.json';
 var configPath      = './config.json';
+
 var devices         = [];
-var modules         = {};
-var activities      = [];
 var profiles        = [];
+var activities      = [];
 var config          = {};
+var modules         = {};
 
-//loads config, right now that consists of only an authToken
-file_tools.readJSONFile(configPath).then(function(cnfg) {
-    config = cnfg;
-});
-
-//loads profiles into the program
-file_tools.readJSONFile(profilesPath).then(function(profileList) {
-    profiles = profileList;
-});
 
 /**
- * Process all modules in the modules.json file
- * This function has to be here as almost every module relies on imported variables in the scope of this file
+ * Processes all activities that can be run by the program, and schedules programs with timing triggers
  */
-file_tools.readJSONFile(modulesPath).then(function(moduleList) {
-       
+function processActivities() {
+    var activitiesToSchedule = activities.filter((eachActivity) => {
+        return eachActivity.triggers.timeofday !== undefined;
+    });
+    if (activitiesToSchedule.length > 0) {
+        activitiesToSchedule.map((scheduledActivity) => {
+            var cronStr = scheduledActivity.triggers.timeofday;
+            var j = schedule.scheduleJob(cronStr, function(fireTime) {
+                device_tools.runActivity(modules, activities, devices, scheduledActivity.name);
+                console.log(scheduledActivity.name + ' ran at ' + fireTime);
+            });
+            j.jobname = scheduledActivity.name;
+            scheduledFunctions.push(j);
+        });
+        console.log('Scheduled ' + scheduledFunctions.length + ' activities, loaded a total of ' + activities.length + ' activities');
+    }
+}
+
+/**
+ * Processes all known devices that will be controlled by the program
+ * @param {Array<Object>} deviceList list of devices loaded from file
+ */
+function processDevices(deviceList) {
+    console.log('Connecting to devices...');
+    deviceList.forEach(function(device) {
+        var tempDevice;
+        try {
+            tempDevice = device;
+            if (device.deviceKind === 'tplink-plug') 
+                tempDevice.obj = TPClient.getPlug({host: device.ip});
+
+            else if (device.deviceKind === 'tplink-bulb') 
+                tempDevice.obj = TPClient.getBulb({host: device.ip});
+
+            else if (device.deviceProto === 'harmony') {
+                //don't think I need to do anything here but saving this space in case I do
+            } 
+            
+            else if (device.deviceProto === 'tuyapi') {
+                tempDevice.obj = new TuyAPI({
+                    id: device.id,
+                    key: device.key,
+                    ip: device.ip
+                });
+            }
+            devices.push(tempDevice);
+            console.log(tempDevice.deviceKind + ' ' + tempDevice.name + ' conected successfully');
+        } catch (err) {
+            console.log(err);
+        }
+    });
+    //pollDevices();
+    //setInterval(pollDevices, 150000);
+}
+
+/**
+ * Processes all modules that will be used by the program
+ * @param {Array<Object>} moduleList list of modules loaded from file
+ */
+function processModules(moduleList) {
+    console.log('Connecting to modules...');
     moduleList.forEach(function(type) {
         //deal with proxmox setup
         if (type.moduleName == 'proxmox') {
             try {
-                prox = require('proxmox')(type.details.user, type.details.password, type.details.ip);
-                modules.prox = prox;
+                modules.prox = proxmox(type.details.user, type.details.password, type.details.ip);
                 console.log('Proxmox connected Successfully');
             } catch(err) {
                 console.log(err);
@@ -95,8 +142,8 @@ file_tools.readJSONFile(modulesPath).then(function(moduleList) {
             
             modules.netgearRouter.routerDetails = modules.netgearRouter.discover().then(discovered => {
                 console.log('Netgear Router connected successfully');
-                checkWhoIsHome();
-                setInterval(checkWhoIsHome, 300000);
+                // checkWhoIsHome();
+                // setInterval(checkWhoIsHome, 300000);
                 return discovered;
             }).catch(err => console.log(err));
         } 
@@ -159,24 +206,7 @@ file_tools.readJSONFile(modulesPath).then(function(moduleList) {
             console.log('Harmony Hub connected successfully');
         }
     });
-}); 
-
-//some cleaning on exit from the program
-process.on('beforeExit', function(code) {
-    console.log('exit code: ' + code);
-    modules.harmony.hub.end();
-    modules.netgearRouter.logout();
-
-    // var writableDevices = device_tools.getWritableDevices(devices);
-    // var writableProfiles = device_tools.getWritableProfiles(profiles);
-    // var writableActivities = device_tools.getWritableActivities(activities);
-    // file_tools.writeJSONFile(devicesPath, writableDevices, function() {console.log('saved devices')});
-    // file_tools.writeJSONFile(profilesPath, writableProfiles, function() {console.log('saved profiles')});
-    // file_tools.writeJSONFile(activitiesPath, writableActivities, function() {console.log('saved activities')});
-    // file_tools.writeJSONFile(modulesPath, modules, function() {console.log('saved modules')});
-
-    console.log('safely exiting the program');
-});
+}
 
 /**
  * Polls every device in devices that has the property 'pollable' for their state
@@ -193,58 +223,6 @@ function pollDevices() {
         }
     });
 }
-
-/**
- * Loads devices.json for list of controlled and configured devices
- */
-file_tools.readJSONFile(devicesPath).then(function(deviceList) {
-    deviceList.forEach(function(device) {
-        var tempDevice;
-        try {
-            tempDevice = device;
-            if (device.deviceKind === 'tplink-plug') 
-                tempDevice.obj = TPClient.getPlug({host: device.ip});
-            else if (device.deviceKind === 'tplink-bulb') 
-                tempDevice.obj = TPClient.getBulb({host: device.ip});
-            else if (device.deviceProto === 'harmony') {
-                //don't think I need to do anything here but saving this space in case I do
-            } else if (device.deviceProto === 'tuyapi') {
-                tempDevice.obj = new TuyAPI({
-                    id: device.id,
-                    key: device.key,
-                    ip: device.ip
-                });
-            }
-            devices.push(tempDevice);
-            console.log(tempDevice.deviceKind + ' ' + tempDevice.name + ' conected successfully');
-        } catch (err) {
-            console.log(err);
-        }
-    });
-    pollDevices();
-    setInterval(pollDevices, 150000);
-});
-
-/**
- * Loads activities and schedules repetitive activities
- */
-file_tools.readJSONFile(activitiesPath).then(function(activityList) {
-    activities = activityList;
-    var activitiesToSchedule = activities.filter((eachActivity) => {
-        return eachActivity.triggers.timeofday !== undefined;
-    });
-    if (activitiesToSchedule.length > 0) {
-        activitiesToSchedule.map((scheduledActivity) => {
-            var cronStr = scheduledActivity.triggers.timeofday;
-            var j = schedule.scheduleJob(cronStr, function(fireTime) {
-                device_tools.runActivity(modules, activities, devices, scheduledActivity.name);
-                console.log(scheduledActivity.name + ' ran at ' + fireTime);
-            });
-            j.jobname = scheduledActivity.name;
-            scheduledFunctions.push(j);
-        });
-    }
-});
 
 /**
  * Queries the Netgear Router for the list of attached devices, and then checks the attached devices to see if they belong to anyone in the profiles list.
@@ -268,6 +246,52 @@ function checkWhoIsHome() {
         }
     }).catch(err => console.log(err));
 }
+
+
+async function setup() {
+    config          = await file_tools.readJSONFile(configPath);
+    profiles        = await file_tools.readJSONFile(profilesPath);
+    modules.list    = await file_tools.readJSONFile(modulesPath);
+    activities      = await file_tools.readJSONFile(activitiesPath);
+    var deviceList  = await file_tools.readJSONFile(devicesPath);
+    
+    processDevices(deviceList);
+    processModules(modules.list);
+    processActivities();
+
+    console.log('Home Assistant will be polling for device states every ' + parseInt(config.devicePollInterval)/60000 + ' minutes');
+    console.log('Home Assistant will be checking who is home every ' + parseInt(config.whoIsHomeInterval)/60000 + ' minutes');
+
+    pollDevices();
+    setInterval(pollDevices, parseInt(config.devicePollInterval)); //poll devices every 2.5 minutes
+
+    checkWhoIsHome();
+    setInterval(checkWhoIsHome, parseInt(config.whoIsHomeInterval));
+
+}
+
+setup();
+
+//some cleaning on exit from the program
+process.on('beforeExit', function(code) {
+    console.log('exit code: ' + code);
+    modules.harmony.hub.end();
+    modules.netgearRouter.logout();
+
+    // var writableDevices = device_tools.getWritableDevices(devices);
+    // var writableProfiles = device_tools.getWritableProfiles(profiles);
+    // var writableActivities = device_tools.getWritableActivities(activities);
+    // file_tools.writeJSONFile(devicesPath, writableDevices, function() {console.log('saved devices')});
+    // file_tools.writeJSONFile(profilesPath, writableProfiles, function() {console.log('saved profiles')});
+    // file_tools.writeJSONFile(activitiesPath, writableActivities, function() {console.log('saved activities')});
+    // file_tools.writeJSONFile(modulesPath, modules, function() {console.log('saved modules')});
+
+    console.log('safely exiting the program');
+});
+
+
+
+
 
 var nonsecureServer = http.createServer(app).listen(9875);
 var secureServer = https.createServer(options, app).listen(9876);
@@ -299,7 +323,7 @@ app.route('/api/devices/list').get((req, res) => {
 });
 
 //gets info about the specific device
-app.route('/api/devices/:deviceID/info').get((req, res) => {
+app.route('/api/devices/:deviceID/info').get(async (req, res) => {
     if (!req.secure) {
         res.status(401).send('Need HTTPS connection!');
         return;
@@ -309,11 +333,12 @@ app.route('/api/devices/:deviceID/info').get((req, res) => {
     }
     var index = parseInt(req.params.deviceID);
     if (devices[index].deviceProto === 'tplink') {
-        devices[index].getSysInfo().then(function (deviceInfo) {
+        var info = await devices[index].getSysInfo();/*.then(function (deviceInfo) {
             res.json(deviceInfo);
         }).catch(function (reason) {
             res.send(reason);
-        });
+        });*/
+        res.send(info);
     }
 });
 
@@ -557,4 +582,10 @@ app.route('/plex/webhook').post(upload.single('thumb'), (req, res, next) => {
     });
 
     res.sendStatus(200);
+});
+
+//--------------OpenCV API
+
+app.route('/api/opencv/takepic').get((req, res) => {
+    
 });
