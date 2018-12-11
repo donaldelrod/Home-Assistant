@@ -393,9 +393,13 @@ app.route('/api/netgearrouter/attached').get((req, res) => {
 });
 
 app.route('/api/netgearrouter/info').get((req, res) => {
-    modules.netgearRouter.getInfo().then(function(info) {
-        res.send(info);
-        console.log(info);
+    modules.netgearRouter.login(modules.netgearRouter.storedPass, modules.netgearRouter.storedUser, modules.netgearRouter.storedHost, modules.netgearRouter.storedPort).then(function(successfulLogin) {
+        if (successfulLogin) {
+            modules.netgearRouter.getInfo().then(function(info) {
+                res.send(info);
+                console.log(info);
+            });
+        }
     });
 });
 
