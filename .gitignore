@@ -3,6 +3,7 @@ modules.json*
 devices.json*
 activities.json*
 profiles.json*
+config.json*
 google_token*
 https_key.pem*
 https_cert.crt* 

@@ -37,7 +37,8 @@ module.exports = {
     });
   },
   /**
-   * 
+   * This function is called when Google is communicating back to Home-Assistant after the user logs in.
+   * Saves the access token to google_token.json and sets the token as active Google credentials
    * @param {Object} google_oauth OAuth2 client to save token for
    * @param {String} code the response code from Google web callback
    */
@@ -57,6 +58,7 @@ module.exports = {
   /**
    * Lists the next 10 events on the user's primary calendar.
    * @param {google.auth.OAuth2} auth An authorized OAuth2 client.
+   * @param {Number} numEvents the max number of events to retrieve from the calendar
    */
   getGCalEvents: function (auth, numEvents) {
     const calendar = google.calendar({ version: 'v3', auth });
