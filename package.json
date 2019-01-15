@@ -1,11 +1,11 @@
 {
   "name": "home-assistant",
   "version": "1.0.0",
-  "description": "Node frontend for home automation Raspberry Pi server",
+  "description": "Node backend for home automation Raspberry Pi server",
   "main": "server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node server.js"
+    "start": "node ."
   },
   "repository": {
     "type": "git",
@@ -18,6 +18,7 @@
   },
   "homepage": "https://github.com/donaldelrod/Home-Assistant#readme",
   "dependencies": {
+    "delivery-tracker": "^2.0.2",
     "express": "^4.16.4",
     "googleapis": "^34.0.0",
     "harmonyhubjs-client": "^1.1.11",
@@ -29,7 +30,5 @@
     "tplink-smarthome-api": "^0.23.0",
     "tuyapi": "github:codetheweb/tuyapi"
   },
-  "devDependencies": {
-    "electron": "^3.0.10"
-  }
+  "devDependencies": {}
 }

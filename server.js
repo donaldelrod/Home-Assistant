@@ -13,6 +13,8 @@ var upload          = multer({dest: '/plexpass/'});
 var schedule        = require('node-schedule');
 var scheduledFunctions = [];
 
+var platform = process.platform;
+
 
 //-------------API imports and Variables------------------------//
 const { Client }    = require('tplink-smarthome-api');
@@ -21,6 +23,7 @@ var proxmox            = require('proxmox');
 const NetgearRouter = require('netgear');
 var harmony         = require('harmonyhubjs-client');
 const TuyAPI        = require('tuyapi');
+
 
 //-------------Google Imports and Variables---------------------//
 const { google }    = require('googleapis');
@@ -205,6 +208,11 @@ function processModules(moduleList) {
             }).catch(err => console.log(err));
             console.log('Harmony Hub connected successfully');
         }
+        //deal with opencv module, which will only be supported on linux/raspberry pi (for now at least)
+        else if (type.moduleName === 'opencv' && platform === 'linux') {
+            modules.cv = require('opencv4nodejs');
+            modules.cv.webcam = new modules.cv.VideoCapture(parseInt(type.details.devicePort));
+        }
     });
 }
 
@@ -291,8 +299,6 @@ process.on('beforeExit', function(code) {
 
 
 
-
-
 var nonsecureServer = http.createServer(app).listen(9875);
 var secureServer = https.createServer(options, app).listen(9876);
 
@@ -300,13 +306,13 @@ var secureServer = https.createServer(options, app).listen(9876);
 
 //lists all the currently known/controllable devices
 app.route('/api/devices/list').get((req, res) => {
-    if (!req.secure) {
-        res.status(401).send('Need HTTPS connection!');
-        return;
-    } else if (req.query.authToken !== config.authToken) {
-        res.status(401).send('Need valid token!');
-        return;
-    }
+    // if (!req.secure) {
+    //     res.status(401).send('Need HTTPS connection!');
+    //     return;
+    // } else if (req.query.authToken !== config.authToken) {
+    //     res.status(401).send('Need valid token!');
+    //     return;
+    // }
     var dev_list = devices.map((d, ind) => {
         return {
             name: d.name,
@@ -317,7 +323,7 @@ app.route('/api/devices/list').get((req, res) => {
             deviceID: ind,
             lastState: d.lastState
         };
-    })
+    });
     console.log(dev_list);
     res.send(dev_list);
 });
@@ -587,5 +593,53 @@ app.route('/plex/webhook').post(upload.single('thumb'), (req, res, next) => {
 //--------------OpenCV API
 
 app.route('/api/opencv/takepic').get((req, res) => {
-    
+    if (!req.secure) {
+        res.status(401).send('Need HTTPS connection!');
+        return;
+    } else if (req.query.authToken !== config.authToken) {
+        res.status(401).send('Need valid token!');
+        return;
+    } else if (platform !== 'linux') {
+        res.status(401).send('OpenCV only supported on Raspberry Pi');
+        return;
+    }
+    var frame = modules.cv.webcam.read();
+    modules.cv.imwrite('./opencv/' + (new Date()).toISOString() + '.jpg', frame);
 });
+
+app.route('/api/opencv/listpics').get((req, res) => {
+    if (!req.secure) {
+        res.status(401).send('Need HTTPS connection!');
+        return;
+    } else if (req.query.authToken !== config.authToken) {
+        res.status(401).send('Need valid token!');
+        return;
+    } else if (platform !== 'linux') {
+        res.status(401).send('OpenCV only supported on Raspberry Pi');
+        return;
+    }
+    var pictures = file_tools.getChildren('./opencv/');
+    if (pictures !== undefined)
+        res.status(200).json(pictures);
+    else res.status(401).send('Couldn\'t get pictures');
+});
+
+app.route('/api/opencv/getpic/:filename').get((req, res) => {
+    if (!req.secure) {
+        res.status(401).send('Need HTTPS connection!');
+        return;
+    } else if (req.query.authToken !== config.authToken) {
+        res.status(401).send('Need valid token!');
+        return;
+    } else if (platform !== 'linux') {
+        res.status(401).send('OpenCV only supported on Raspberry Pi');
+        return;
+    }
+    if (file_tools.fileExists(req.params.filename)) {
+        res.writeHead(200, {
+            "Content-Type": "application/octet-stream",
+            "Content-Disposition": "attachment; filename=" + req.params.filename
+        });
+        fs.createReadStream(req.query.filename).pipe(res);
+    }
+})

@@ -1,0 +1,26 @@
+<div *ngIf="device">
+    <h2>{{ device.name | uppercase}}</h2>
+    <div><span>Device ID: </span>{{ device.deviceID }}</div>
+    <div>
+      <label>Name:
+        <span *ngIf="!editName">{{device.name}}</span>
+        <input *ngIf="editName" [(ngModel)]="device.name" placeholder="Kitchen Coffeemaker">
+      </label>
+    </div>
+    <div>
+      <label>Device Type:
+        <input [(ngModel)]="device.deviceType" placeholder="Wifi Switch">
+      </label>
+    </div>
+    <div><span>Device Kind: </span>{{ device.deviceKind }}</div>
+    <div>
+      <label>Groups:
+        <li *ngFor="let group of device.groups">
+          <input value={{group}}>
+          <br>
+        </li>
+      </label>
+    </div>
+</div>
+
+<button (click)="goBack()">go back</button>

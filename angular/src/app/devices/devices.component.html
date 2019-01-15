@@ -1,0 +1,12 @@
+<h2>Connected Devices</h2>
+<ul class="devices">
+  <li *ngFor="let device of devices">
+  <!-- [class.selected]="device === selectedDevice"
+  (click)="onSelect(device)"> -->
+    <span class="badge">{{device.deviceID}}:</span> {{device.name}}
+  </li>
+</ul>
+
+<app-device-detail [device]="selectedDevice"></app-device-detail>
+
+<app-device-messages></app-device-messages>
