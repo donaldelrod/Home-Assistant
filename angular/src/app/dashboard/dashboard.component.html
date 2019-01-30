@@ -5,7 +5,7 @@
         <a routerLink="/device/detail/{{device.deviceID}}">
           <h4>{{ device.name }}</h4>
         </a>
-        <button mat-button *ngIf="device.isToggle" (click)="toggleState(device, !device.lastState)">{{ device.lastStateString }}</button> 
+        <button class="toggleButton" *ngIf="device.isToggle" (click)="toggleState(device, !device.lastState)">{{ device.lastStateString }}</button> 
       </div>
     </div>
 </div>
