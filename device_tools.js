@@ -4,8 +4,11 @@ module.exports = {
      * @param {Object} modules modules object from server.js
      * @param {string} formattedCommand Harmony-specific command string, tells the hub what button to emulate
      */
-    sendHarmonyCommand: function(modules, formattedCommand) {
-        modules.harmony.hub.send('holdAction', 'action=' + formattedCommand + ':status=press');
+    sendHarmonyCommand: function(modules, formattedCommand, hubName) {
+        var hub = modules.harmony.hubs.filter(h => {
+            return h.hubName === hubName;
+        }).pop();//[hubInd];
+        hub.send('holdAction', 'action=' + formattedCommand + ':status=press');
     },
     /**
      * Sets the state of supported devices/protocols. Supported devices currently are:
@@ -15,9 +18,9 @@ module.exports = {
      * @param {Object} device device object to set the state of
      * @param {boolean} state true for on, false for off, undefined for toggle
      * @param {Object} modules modules object from server.js
-     * @returns {boolean} the new state of the device
+     * @returns {Device} the new state of the device
      */
-    setDeviceState: function(device, state, modules) {
+    setDeviceState: async function(device, state, modules) {
         var toggle = state === undefined;
         var power_state;
         if (toggle) {
@@ -33,21 +36,21 @@ module.exports = {
                             console.log('status change succeeded');
                         else console.log('status change failed');
                         device.lastState = !status;
-                    });
+                    }).catch(err => console.log('could not change tuyapi device state: ' + err));
                 }).catch(err => console.log(err));
             } else if (device.deviceProto === 'harmony') {
 
                 var powerControl = this.getHarmonyControl(modules, device.name, 'Power', 'PowerToggle');
 
                 if (powerControl !== undefined) {
-                    this.sendHarmonyCommand(modules, powerControl.formattedCommand);
+                    this.sendHarmonyCommand(modules, powerControl.formattedCommand, device.belongsToHub);
                     device.lastState = device.lastState === undefined ? undefined : !device.lastState;
                 } else {
                     console.log('Harmony control not found: Power PowerToggle');
                     return undefined;
                 }
             }
-            return power_state;
+            return device;
         }
         //if we are not toggling the power and instead setting the state directly
         if (device.deviceProto === 'tplink') {
@@ -55,10 +58,10 @@ module.exports = {
             power_state = state;
             device.lastState = state;
         } else if (device.deviceProto === 'tuyapi') {
-            device.obj.set({set: state}).then(result => {
+            await device.obj.set({set: state}).then(result => {
                 power_state = state;
                 if (result) {
-                    console.log('successfully set state to true');
+                    console.log('successfully set state to ' + state);
                     device.lastState = state;
                 }
                 else console.log('failed to set state to true');
@@ -70,7 +73,7 @@ module.exports = {
             var powerControl = this.getHarmonyControl(modules, device.name, 'Power', control);
 
             if (powerControl !== undefined) {
-                this.sendHarmonyCommand(modules, powerControl.formattedCommand);
+                this.sendHarmonyCommand(modules, powerControl.formattedCommand, device.belongsToHub);
                 power_state = state;
                 device.lastState = state;
             } else {
@@ -78,7 +81,7 @@ module.exports = {
                 return undefined;
             }
         }
-        return power_state;
+        return device;
     },
     /**
      * Finds the specific Harmony control for the given input
@@ -138,6 +141,8 @@ module.exports = {
                     deviceKind: d.deviceKind,
                     deviceType: d.type,
                     ip: d.ip,
+                    belongsToHub: d.belongsToHub,
+                    hubInd: d.hubInd,
                     groups: d.groups,
                     controlPort: d.ControlPort,
                     manufacturer: d.manufacturer,
@@ -222,7 +227,7 @@ module.exports = {
                 var selectedControl = this.getHarmonyControl(modules, commandingDevice.name, controlGroup, control);
 
                 if (selectedControl !== undefined) {
-                    this.sendHarmonyCommand(modules, selectedControl.formattedCommand);
+                    this.sendHarmonyCommand(modules, selectedControl.formattedCommand, commandingDevice.hubInd);
 
                     //update last state of device if the is a power command
                     if (controlGroup === 'Power')
@@ -247,7 +252,7 @@ module.exports = {
         } else if (device.deviceProto === 'tuyapi') {
             return device.obj.get().then( (status) => {
                 return status;
-            });
+            }).catch((reason) => {console.log(reason); return undefined});
         }
     }
 

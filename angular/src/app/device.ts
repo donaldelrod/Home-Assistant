@@ -9,4 +9,5 @@ export class Device {
     isToggle: boolean;
     manufacturer?: string;
     model?: string;
+    lastStateString?: string;
 }

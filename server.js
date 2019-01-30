@@ -12,6 +12,7 @@ var multer          = require('multer');
 var upload          = multer({dest: '/plexpass/'});
 var schedule        = require('node-schedule');
 var scheduledFunctions = [];
+var cors = require('cors');
 
 var platform = process.platform;
 
@@ -78,6 +79,7 @@ function processActivities() {
  */
 function processDevices(deviceList) {
     console.log('Connecting to devices...');
+    //var ind = 0;
     deviceList.forEach(function(device) {
         var tempDevice;
         try {
@@ -113,7 +115,7 @@ function processDevices(deviceList) {
  * Processes all modules that will be used by the program
  * @param {Array<Object>} moduleList list of modules loaded from file
  */
-function processModules(moduleList) {
+async function processModules(moduleList) {
     console.log('Connecting to modules...');
     moduleList.forEach(function(type) {
         //deal with proxmox setup
@@ -153,60 +155,79 @@ function processModules(moduleList) {
         //deal with harmony hub setup
         else if (type.moduleName == 'harmony') {
             modules.harmony = {};
-            harmony(type.details.host).then(function(hub) {
-                modules.harmony.hub = hub;
-
-                modules.harmony.hub.getAvailableCommands().then(function(rawCommands) {
-                    var tempHarmonyDevice;
-
-                    var harmonyDevices = []; //what will be set to modules.harmony.devices
-                    rawCommands.device.forEach(function(rawDevice) {
-                        tempHarmonyDevice = {
-                            name: rawDevice.label,
-                            deviceProto: 'harmony',
-                            deviceKind: 'harmony-'+rawDevice.type,
-                            deviceType: rawDevice.type,
-                            ip: "",
-                            pollable: false,
-                            groups: [],
-                            controlPort: rawDevice.ControlPort,
-                            manufacturer: rawDevice.manufacturer,
-                            harmonyProfile: rawDevice.deviceProfileUri,
-                            deviceModel: rawDevice.model,
-                            isManualPower: rawDevice.isManualPower,
-                            controlGroups: []
-                        };
-                        rawDevice.controlGroup.forEach(function(cg) {
-                            tempCG = {
-                                name: cg.name,
-                                controls: []
+            modules.harmony.devices = [];
+            modules.harmony.hubs = [];
+            //var hubInd = 0;
+            type.details.forEach(/*function*/ (harmonyHost, hi) => {
+                var hubInd = hi;
+                harmony(harmonyHost.host).then(function(hub) {
+                    hub.hubName = harmonyHost.hubName;
+                    modules.harmony.hubs.push(hub);
+                    //console.log(modules.harmony.hubs[hubInd]);
+                    //modules.harmony.hubs[hubInd].name = harmonyHost.hubName;
+                    /*modules.harmony.hubs[hubInd]*/
+                    hub.getAvailableCommands().then(function(rawCommands) {
+                        var tempHarmonyDevice;
+    
+                        var harmonyDevices = []; //what will be set to modules.harmony.devices
+                        rawCommands.device.forEach(function(rawDevice) {
+                            tempHarmonyDevice = {
+                                name: rawDevice.label,
+                                deviceID: devices.length,
+                                deviceProto: 'harmony',
+                                deviceKind: 'harmony-'+rawDevice.type,
+                                deviceType: rawDevice.type,
+                                ip: "",
+                                pollable: false,
+                                groups: [],
+                                controlPort: rawDevice.ControlPort,
+                                manufacturer: rawDevice.manufacturer,
+                                harmonyProfile: rawDevice.deviceProfileUri,
+                                deviceModel: rawDevice.model,
+                                isManualPower: rawDevice.isManualPower,
+                                controlGroups: [],
+                                lastState: false,
+                                belongsToHub: harmonyHost.hubName,
+                                hubInd: hubInd
                             };
-                            cg.function.forEach(function(ctrl) {
-                                tempCG.controls.push({
-                                    name: ctrl.name,
-                                    command: ctrl.action,
-                                    formattedCommand: ctrl.action.replace(/\:/g, '::')
+                            rawDevice.controlGroup.forEach(function(cg) {
+                                tempCG = {
+                                    name: cg.name,
+                                    controls: []
+                                };
+                                cg.function.forEach(function(ctrl) {
+                                    tempCG.controls.push({
+                                        name: ctrl.name,
+                                        command: ctrl.action,
+                                        formattedCommand: ctrl.action.replace(/\:/g, '::')
+                                    });
                                 });
+                                tempHarmonyDevice.controlGroups.push(tempCG);
                             });
-                            tempHarmonyDevice.controlGroups.push(tempCG);
+                            harmonyDevices.push(tempHarmonyDevice);
+                            var inDevices = false;
+                            devices.forEach(function(d) {
+                                if (d.name === tempHarmonyDevice.name)
+                                    inDevices = true;
+                            });
+    
+                            //only push to devices if the device is new, so harmony devices can be 
+                            //stored and further customized in the program
+                            //devices are saved to devices.json after being added once
+                            if (!inDevices)
+                                devices.push(tempHarmonyDevice);
                         });
-                        harmonyDevices.push(tempHarmonyDevice);
-                        var inDevices = false;
-                        devices.forEach(function(d) {
-                            if (d.name === tempHarmonyDevice.name)
-                                inDevices = true;
+                        harmonyDevices.forEach(function (harmDev) {
+                            modules.harmony.devices.push(harmDev);
                         });
-
-                        //only push to devices if the device is new, so harmony devices can be 
-                        //stored and further customized in the program
-                        //devices are saved to devices.json after being added once
-                        if (!inDevices)
-                            devices.push(tempHarmonyDevice);
+                        
                     });
-                    modules.harmony.devices = harmonyDevices;
-                });
-            }).catch(err => console.log(err));
-            console.log('Harmony Hub connected successfully');
+                    //hubInd++;
+                }).catch(err => console.log(err));
+                console.log('Harmony Hub connected successfully');
+                
+            });
+            
         }
         //deal with opencv module, which will only be supported on linux/raspberry pi (for now at least)
         else if (type.moduleName === 'opencv' && platform === 'linux') {
@@ -230,6 +251,40 @@ function pollDevices() {
             }).catch(err => console.log(err));
         }
     });
+}
+
+function getSendableDevice(id) {
+    var dev_list = devices.map((d, ind) => { 
+        return {
+            deviceID: d.deviceID,
+            name: d.name,
+            deviceType: d.deviceType,
+            deviceKind: d.deviceKind,
+            proto: d.deviceProto,
+            groups: d.groups,
+            lastState: d.lastState,
+            isToggle: true,
+            lastStateString: d.lastState ? 'on' : 'off'
+        };
+    });
+    return dev_list[id];
+}
+
+function getSendableDevices() {
+    var dev_list = devices.map((d, ind) => { 
+        return {
+            deviceID: ind,
+            name: d.name,
+            deviceType: d.deviceType,
+            deviceKind: d.deviceKind,
+            proto: d.deviceProto,
+            groups: d.groups,
+            lastState: d.lastState,
+            isToggle: true,
+            lastStateString: d.lastState ? 'on' : 'off'
+        };
+    });
+    return dev_list;
 }
 
 /**
@@ -283,7 +338,7 @@ setup();
 //some cleaning on exit from the program
 process.on('beforeExit', function(code) {
     console.log('exit code: ' + code);
-    modules.harmony.hub.end();
+    modules.harmony.hubs.map((hub) => hub.end());
     modules.netgearRouter.logout();
 
     // var writableDevices = device_tools.getWritableDevices(devices);
@@ -297,7 +352,7 @@ process.on('beforeExit', function(code) {
     console.log('safely exiting the program');
 });
 
-
+app.use(cors());
 
 var nonsecureServer = http.createServer(app).listen(9875);
 var secureServer = https.createServer(options, app).listen(9876);
@@ -309,51 +364,47 @@ app.route('/api/devices/list').get((req, res) => {
     // if (!req.secure) {
     //     res.status(401).send('Need HTTPS connection!');
     //     return;
-    // } else if (req.query.authToken !== config.authToken) {
-    //     res.status(401).send('Need valid token!');
-    //     return;
-    // }
-    var dev_list = devices.map((d, ind) => {
-        return {
-            name: d.name,
-            deviceType: d.deviceType,
-            deviceKind: d.deviceKind,
-            proto: d.deviceProto,
-            groups: d.groups,
-            deviceID: ind,
-            lastState: d.lastState
-        };
-    });
+    // } else 
+    if (req.query.authToken !== config.authToken) {
+        res.status(401).send('Need valid token!');
+        return;
+    }
+    var dev_list = getSendableDevices();
+ 
     console.log(dev_list);
-    res.send(dev_list);
+    res.json(dev_list);
 });
 
 //gets info about the specific device
 app.route('/api/devices/:deviceID/info').get(async (req, res) => {
-    if (!req.secure) {
-        res.status(401).send('Need HTTPS connection!');
-        return;
-    } else if (req.query.authToken !== config.authToken) {
+    // if (!req.secure) {
+    //     res.status(401).send('Need HTTPS connection!');
+    //     return;
+    // } else 
+    if (req.query.authToken !== config.authToken) {
         res.status(401).send('Need valid token!');
         return;
     }
     var index = parseInt(req.params.deviceID);
-    if (devices[index].deviceProto === 'tplink') {
-        var info = await devices[index].getSysInfo();/*.then(function (deviceInfo) {
-            res.json(deviceInfo);
-        }).catch(function (reason) {
-            res.send(reason);
-        });*/
-        res.send(info);
-    }
+    // if (devices[index].deviceProto === 'tplink') {
+    //     var info = await devices[index].getSysInfo();/*.then(function (deviceInfo) {
+    //         res.json(deviceInfo);
+    //     }).catch(function (reason) {
+    //         res.send(reason);
+    //     });*/
+    //     res.send(info);
+    // }
+    let d = getSendableDevice(index);
+    res.json(d);
 });
 
 //sets the state of an individual device
-app.route('/api/devices/:deviceID/set/:state').get((req, res) => {
-    if (!req.secure) {
-        res.status(401).send('Need HTTPS connection!');
-        return;
-    } else if (req.query.authToken !== config.authToken) {
+app.route('/api/devices/:deviceID/set/:state').get( async (req, res) => {
+    // if (!req.secure) {
+    //     res.status(401).send('Need HTTPS connection!');
+    //     return;
+    // } else 
+    if (req.query.authToken !== config.authToken) {
         res.status(401).send('Need valid token!');
         return;
     }
@@ -361,20 +412,23 @@ app.route('/api/devices/:deviceID/set/:state').get((req, res) => {
     var device = devices[index];
     if (device === undefined) {
         res.send('requested device doesn\'t exist!');
+        //!!!!!!!!!!!!!!!!!!!!!!need to change this
         return;
     }
     var state = req.params.state === '1' ? true : (req.params.state === '0' ? false : undefined);
     
-    state = device_tools.setDeviceState(device, state, modules);
-    res.send("device " + index + ' turned ' + (state == true ? 'on' : 'off'));
+    let d = await device_tools.setDeviceState(device, state, modules);
+    let dd = getSendableDevice(d.deviceID);
+    res.json(dd);
 });
 
 //controls the state of a group of devices
 app.route('/api/groups/:control').get((req, res) => {
-    if (!req.secure) {
-        res.status(401).send('Need HTTPS connection!');
-        return;
-    } else if (req.query.authToken !== config.authToken) {
+    // if (!req.secure) {
+    //     res.status(401).send('Need HTTPS connection!');
+    //     return;
+    // } else 
+    if (req.query.authToken !== config.authToken) {
         res.status(401).send('Need valid token!');
         return;
     }
@@ -416,10 +470,11 @@ app.route('/api/groups/:control').get((req, res) => {
 
 //runs the activity with the name :name
 app.route('/api/activities/name/:name').get((req, res) => {
-    if (!req.secure) {
-        res.status(401).send('Need HTTPS connection!');
-        return;
-    } else if (req.query.authToken !== config.authToken) {
+    // if (!req.secure) {
+    //     res.status(401).send('Need HTTPS connection!');
+    //     return;
+    // } else 
+    if (req.query.authToken !== config.authToken) {
         res.status(401).send('Need valid token!');
         return;
     }
@@ -430,10 +485,11 @@ app.route('/api/activities/name/:name').get((req, res) => {
 
 //returns the list of people at the house
 app.route('/api/people/list').get((req, res) => {
-    if (!req.secure) {
-        res.status(401).send('Need HTTPS connection!');
-        return;
-    } else if (req.query.authToken !== config.authToken) {
+    // if (!req.secure) {
+    //     res.status(401).send('Need HTTPS connection!');
+    //     return;
+    // } else 
+    if (req.query.authToken !== config.authToken) {
         res.status(401).send('Need valid token!');
         return;
     }
@@ -442,10 +498,11 @@ app.route('/api/people/list').get((req, res) => {
 
 //return all scheduled activities
 app.route('/api/activities/scheduled').get((req, res) => {
-    if (!req.secure) {
-        res.status(401).send('Need HTTPS connection!');
-        return;
-    } else if (req.query.authToken !== config.authToken) {
+    // if (!req.secure) {
+    //     res.status(401).send('Need HTTPS connection!');
+    //     return;
+    // } else 
+    if (req.query.authToken !== config.authToken) {
         res.status(401).send('Need valid token!');
         return;
     }
@@ -466,10 +523,11 @@ app.route('/oauth2/google').get((req, res) => {
 
 //gets upcoming events in your Google Calendar
 app.route('/api/modules/google/cal/upcoming').get((req, res) => {
-    if (!req.secure) {
-        res.status(401).send('Need HTTPS connection!');
-        return;
-    } else if (req.query.authToken !== config.authToken) {
+    // if (!req.secure) {
+    //     res.status(401).send('Need HTTPS connection!');
+    //     return;
+    // } else 
+    if (req.query.authToken !== config.authToken) {
         res.status(401).send('Need valid token!');
         return;
     }
@@ -482,10 +540,11 @@ app.route('/api/modules/google/cal/upcoming').get((req, res) => {
 
 //doesn't really do anything but I'm leaving it here to remind me to fix it
 app.route('/api/modules/google/gmail/labels').get((req, res) => {
-    if (!req.secure) {
-        res.status(401).send('Need HTTPS connection!');
-        return;
-    } else if (req.query.authToken !== config.authToken) {
+    // if (!req.secure) {
+    //     res.status(401).send('Need HTTPS connection!');
+    //     return;
+    // } else 
+    if (req.query.authToken !== config.authToken) {
         res.status(401).send('Need valid token!');
         return;
     }
@@ -497,10 +556,11 @@ app.route('/api/modules/google/gmail/labels').get((req, res) => {
 
 //returns all the devices connected to the netgear router
 app.route('/api/netgearrouter/attached').get((req, res) => {
-    if (!req.secure) {
-        res.status(401).send('Need HTTPS connection!');
-        return;
-    } else if (req.query.authToken !== config.authToken) {
+    // if (!req.secure) {
+    //     res.status(401).send('Need HTTPS connection!');
+    //     return;
+    // } else 
+    if (req.query.authToken !== config.authToken) {
         res.status(401).send('Need valid token!');
         return;
     }
@@ -516,10 +576,11 @@ app.route('/api/netgearrouter/attached').get((req, res) => {
 
 //returns info about the netgear router
 app.route('/api/netgearrouter/info').get((req, res) => {
-    if (!req.secure) {
-        res.status(401).send('Need HTTPS connection!');
-        return;
-    } else if (req.query.authToken !== config.authToken) {
+    // if (!req.secure) {
+    //     res.status(401).send('Need HTTPS connection!');
+    //     return;
+    // } else 
+    if (req.query.authToken !== config.authToken) {
         res.status(401).send('Need valid token!');
         return;
     }
@@ -536,10 +597,11 @@ app.route('/api/netgearrouter/info').get((req, res) => {
 
 //send all the harmony devices
 app.route('/api/modules/harmony/devices').get((req, res) => {
-    if (!req.secure) {
-        res.status(401).send('Need HTTPS connection!');
-        return;
-    } else if (req.query.authToken !== config.authToken) {
+    // if (!req.secure) {
+    //     res.status(401).send('Need HTTPS connection!');
+    //     return;
+    // } else 
+    if (req.query.authToken !== config.authToken) {
         res.status(401).send('Need valid token!');
         return;
     }
@@ -548,10 +610,11 @@ app.route('/api/modules/harmony/devices').get((req, res) => {
 
 //control a specific harmony device by specifying a device name, control group and control
 app.route('/api/modules/harmony/control/:device_name/:control_group/:control').get((req, res) => {
-    if (!req.secure) {
-        res.status(401).send('Need HTTPS connection!');
-        return;
-    } else if (req.query.authToken !== config.authToken) {
+    // if (!req.secure) {
+    //     res.status(401).send('Need HTTPS connection!');
+    //     return;
+    // } else 
+    if (req.query.authToken !== config.authToken) {
         res.status(401).send('Need valid token!');
         return;
     }
@@ -593,10 +656,11 @@ app.route('/plex/webhook').post(upload.single('thumb'), (req, res, next) => {
 //--------------OpenCV API
 
 app.route('/api/opencv/takepic').get((req, res) => {
-    if (!req.secure) {
-        res.status(401).send('Need HTTPS connection!');
-        return;
-    } else if (req.query.authToken !== config.authToken) {
+    // if (!req.secure) {
+    //     res.status(401).send('Need HTTPS connection!');
+    //     return;
+    // } else 
+    if (req.query.authToken !== config.authToken) {
         res.status(401).send('Need valid token!');
         return;
     } else if (platform !== 'linux') {
@@ -608,10 +672,11 @@ app.route('/api/opencv/takepic').get((req, res) => {
 });
 
 app.route('/api/opencv/listpics').get((req, res) => {
-    if (!req.secure) {
-        res.status(401).send('Need HTTPS connection!');
-        return;
-    } else if (req.query.authToken !== config.authToken) {
+    // if (!req.secure) {
+    //     res.status(401).send('Need HTTPS connection!');
+    //     return;
+    // } else 
+    if (req.query.authToken !== config.authToken) {
         res.status(401).send('Need valid token!');
         return;
     } else if (platform !== 'linux') {
@@ -625,10 +690,11 @@ app.route('/api/opencv/listpics').get((req, res) => {
 });
 
 app.route('/api/opencv/getpic/:filename').get((req, res) => {
-    if (!req.secure) {
-        res.status(401).send('Need HTTPS connection!');
-        return;
-    } else if (req.query.authToken !== config.authToken) {
+    // if (!req.secure) {
+    //     res.status(401).send('Need HTTPS connection!');
+    //     return;
+    // } else 
+    if (req.query.authToken !== config.authToken) {
         res.status(401).send('Need valid token!');
         return;
     } else if (platform !== 'linux') {
@@ -642,4 +708,4 @@ app.route('/api/opencv/getpic/:filename').get((req, res) => {
         });
         fs.createReadStream(req.query.filename).pipe(res);
     }
-})
+});

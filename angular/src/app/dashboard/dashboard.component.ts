@@ -23,12 +23,18 @@ export class DashboardComponent implements OnInit {
   }
 
   toggleState(d: Device, state: boolean): void {
-    d.lastState = state;
-    if (state) {
-      //return "On";
-    }
-    else if (!state) {
-      //return "Off";
-    }
+
+    console.log('lastState: ' + d.lastState + '\tstate: ' + state + '\tlastStateString: ' + d.lastStateString);
+    // d.lastState = state;
+    // d.lastStateString = state ? 'on' : 'off';
+    // if (state) {
+
+    //   //return "On";
+    // }
+    // else if (!state) {
+    //   //return "Off";
+    // }
+
+    this.deviceService.toggleDevice(d.deviceID, state).subscribe(dev => this.devices[d.deviceID] = dev);
   }
 }
