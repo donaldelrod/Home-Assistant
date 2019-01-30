@@ -1,0 +1,22 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "ng serve",
+            "type": "shell",
+            "command": "ng",
+            "args": [
+                "serve"
+            ],
+            "options": {
+                "cwd": "${workspaceRoot}\\angular"
+            },
+            "presentation": {
+                "reveal": "always",
+                "panel": "new"
+            },
+            "group": "test",
+            "isBackground": true
+        }
+    ]
+}

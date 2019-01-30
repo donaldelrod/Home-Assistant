@@ -157,7 +157,6 @@ async function processModules(moduleList) {
             modules.harmony = {};
             modules.harmony.devices = [];
             modules.harmony.hubs = [];
-            //var hubInd = 0;
             type.details.forEach(/*function*/ (harmonyHost, hi) => {
                 var hubInd = hi;
                 harmony(harmonyHost.host).then(function(hub) {

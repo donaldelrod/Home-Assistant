@@ -1,0 +1,23 @@
+{
+	"folders": [
+		{
+			"name": "Node Backend",
+			"path": "."
+		},
+		{
+			"name": "Angular Frontend",
+			"path": "./angular"
+		},
+		{
+			"name": "Electron Client",
+			"path": "./electron"
+		},
+		{
+			"name": "Hardware Schematics and Code",
+			"path": "./hardware"
+		}
+	],
+	"settings": {
+		
+	}
+}

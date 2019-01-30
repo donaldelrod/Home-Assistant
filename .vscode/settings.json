@@ -1,0 +1,12 @@
+{
+    "files.exclude": {
+        "**/angular": true,
+        "**/electron": true,
+        "**/hardware": true,
+        "**/node_modules": true,
+        "**/.hg": true,
+        "**/CVS": true,
+        "**/.DS_Store": true,
+        "**/*.bck*": true
+    }
+}
