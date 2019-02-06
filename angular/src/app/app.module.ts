@@ -10,6 +10,7 @@ import { DeviceMessagesComponent } from './device-messages/device-messages.compo
 import { DashboardComponent } from './dashboard/dashboard.component';
 import { HttpClientModule } from '@angular/common/http';
 import { HarmonyControlsComponent } from './harmony-controls/harmony-controls.component';
+import { RouterDevicesComponent } from './router-devices/router-devices.component';
 
 @NgModule({
   declarations: [
@@ -18,7 +19,8 @@ import { HarmonyControlsComponent } from './harmony-controls/harmony-controls.co
     DeviceDetailComponent,
     DeviceMessagesComponent,
     DashboardComponent,
-    HarmonyControlsComponent
+    HarmonyControlsComponent,
+    RouterDevicesComponent
   ],
   imports: [
     BrowserModule,

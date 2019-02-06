@@ -1,0 +1,9 @@
+<div *ngIf="routerDevices">
+  <div class="router-info" *ngFor="let rd of routerDevices">
+    <label class="router-device">Name: {{ rd.Name | slice:0:15 }}</label><br>
+    <label class="router-device">IP: {{ rd.IP }}</label><br>
+    <label class="router-device">MAC: {{ rd.MAC | lowercase }}</label><br>
+    <label class="router-device">Conn. type: {{ rd.ConnectionType }}</label><br>
+    <label class="router-device">Signal strength: {{ rd.SignalStrength }}</label>
+  </div>
+</div>
