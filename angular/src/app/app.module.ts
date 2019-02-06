@@ -9,6 +9,7 @@ import { DeviceDetailComponent } from './device-detail/device-detail.component';
 import { DeviceMessagesComponent } from './device-messages/device-messages.component';
 import { DashboardComponent } from './dashboard/dashboard.component';
 import { HttpClientModule } from '@angular/common/http';
+import { HarmonyControlsComponent } from './harmony-controls/harmony-controls.component';
 
 @NgModule({
   declarations: [
@@ -16,7 +17,8 @@ import { HttpClientModule } from '@angular/common/http';
     DevicesComponent,
     DeviceDetailComponent,
     DeviceMessagesComponent,
-    DashboardComponent
+    DashboardComponent,
+    HarmonyControlsComponent
   ],
   imports: [
     BrowserModule,

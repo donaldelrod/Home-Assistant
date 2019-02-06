@@ -1,4 +1,4 @@
-<div *ngIf="device">
+<div *ngIf="device" class="devdeets">
     <h2>{{ device.name | uppercase}}</h2>
     <div><span>Device ID: </span>{{ device.deviceID }}</div>
     <div>
@@ -15,12 +15,21 @@
     <div><span>Device Kind: </span>{{ device.deviceKind }}</div>
     <div>
       <label>Groups:
-        <li *ngFor="let group of device.groups">
-          <input value={{group}}>
-          <br>
-        </li>
+        <ul>
+          <li *ngFor="let group of device.groups">
+            <input display="inline-block" value={{group}}>
+            <br>
+          </li>
+          <li>
+            <input placeholder="e.g. bedroom">
+            <br>
+          </li>
+        </ul>
       </label>
     </div>
+    <button (click)="goBack()">go back</button>
 </div>
 
-<button (click)="goBack()">go back</button>
+
+
+<app-harmony-controls *ngIf="device" class="harmony column" [harmony_device]="device"></app-harmony-controls>

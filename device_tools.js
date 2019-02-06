@@ -1,3 +1,5 @@
+var hue = require('./hue.js');
+
 module.exports = {
     /**
      * Sends the formatted command to the connected Harmony Hub
@@ -49,7 +51,9 @@ module.exports = {
                     console.log('Harmony control not found: Power PowerToggle');
                     return undefined;
                 }
-            }
+            } //else if (device.deviceProto === 'hue') {
+
+            //}
             return device;
         }
         //if we are not toggling the power and instead setting the state directly
@@ -80,6 +84,11 @@ module.exports = {
                 console.log('Harmony control not found: Power ' + control);
                 return undefined;
             }
+        } else if (device.deviceProto === 'hue') {
+            await hue.setLightState(modules, device.hue.hueID, state);
+            device.lastState = state;
+            //if (ret[0]['success'] === undefined)
+            //    return undefined;
         }
         return device;
     },

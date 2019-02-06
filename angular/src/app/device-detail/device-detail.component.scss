@@ -29,3 +29,32 @@ label {
     color: #ccc;
     cursor: auto;
   }
+
+  .column {
+    float: left;
+    padding: 1px;
+  }
+  
+  .devdeets {
+    width: 40%;
+    // border-style: solid;
+    // border-width: 1px;
+  }
+  
+  .harmony {
+    width: 60%;
+  }
+
+  .flex-container {
+    display: flex;
+    flex-direction: row;
+  }
+
+  // [class*='col-'] {
+  //   float: left;
+  //   padding-right: 10px;
+  //   padding-bottom: 10px;
+  // }
+  // [class*='col-']:last-of-type {
+  //   padding-right: 0;
+  // }

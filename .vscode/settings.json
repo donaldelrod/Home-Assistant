@@ -6,7 +6,7 @@
         "**/node_modules": true,
         "**/.hg": true,
         "**/CVS": true,
-        "**/.DS_Store": true,
-        "**/*.bck*": true
+        "**/.DS_Store": true
+        //"**/*.bck*": true
     }
 }

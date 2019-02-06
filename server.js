@@ -20,7 +20,7 @@ var platform = process.platform;
 //-------------API imports and Variables------------------------//
 const { Client }    = require('tplink-smarthome-api');
 const TPClient      = new Client();
-var proxmox            = require('proxmox');
+var proxmox         = require('proxmox');
 const NetgearRouter = require('netgear');
 var harmony         = require('harmonyhubjs-client');
 const TuyAPI        = require('tuyapi');
@@ -35,7 +35,9 @@ var file_tools      = require('./file_tools.js');
 var device_tools    = require('./device_tools.js');
 var prox_tools      = require('./prox_tools.js');
 var google_tools    = require('./google_tools.js');
-var module_tools    = require('./module_tools.js');
+var hue             = require('./hue.js');
+//var module_tools    = require('./module_tools.js');
+//const { Device }    = require('./angular/device.ts');
 
 //-------------Program Variables------------------------------//
 const programPath   = __dirname;
@@ -117,7 +119,7 @@ function processDevices(deviceList) {
  */
 async function processModules(moduleList) {
     console.log('Connecting to modules...');
-    moduleList.forEach(function(type) {
+    moduleList.forEach(async function(type) {
         //deal with proxmox setup
         if (type.moduleName == 'proxmox') {
             try {
@@ -228,6 +230,49 @@ async function processModules(moduleList) {
             });
             
         }
+        else if (type.moduleName === 'hue') {
+            modules.hue = {
+                ip: type.details.host,
+                username: type.details.username
+            };
+            var hueDevices = await hue.getAllLights(modules);
+            var i = 1;
+            while(hueDevices[''+i] !== undefined) {
+                var hueDevice = hueDevices[''+i];
+                var tempDevice = {
+                    deviceID: devices.length,
+                    name: hueDevice.name,
+                    deviceType: hueDevice.type,
+                    deviceProto: 'hue',
+                    deviceKind: hueDevice.productid,
+                    manufacturer: hueDevice.manufacturername,
+                    groups: ['lights','hue'],
+                    lastState: hueDevice.state.on,
+                    isToggle: true,
+                    model: hueDevice.modelid,
+                    harmonyControl: false,
+                    hueControl: true,
+                    hue: {
+                        capabilities: hueDevice.capabilities,
+                        config: hueDevice.config,
+                        uid: hueDevice.uniqueid,
+                        swversion: hueDevice.swversion,
+                        state: hueDevice.state,
+                        hueID: i
+                    }
+                };
+                var inDevices = false;
+                devices.forEach(function (device) {
+                    if (device.name === tempDevice.name)
+                        inDevices = true;
+                });
+                if (!inDevices)
+                    devices.push(tempDevice);
+                i++;
+            }
+            console.log('Hue successfully connected')
+            console.log(hueDevices);
+        }
         //deal with opencv module, which will only be supported on linux/raspberry pi (for now at least)
         else if (type.moduleName === 'opencv' && platform === 'linux') {
             modules.cv = require('opencv4nodejs');
@@ -253,8 +298,8 @@ function pollDevices() {
 }
 
 function getSendableDevice(id) {
-    var dev_list = devices.map((d, ind) => { 
-        return {
+    var dev_list = devices.map((d, ind) => {
+        var sendableDevice = {
             deviceID: d.deviceID,
             name: d.name,
             deviceType: d.deviceType,
@@ -263,15 +308,21 @@ function getSendableDevice(id) {
             groups: d.groups,
             lastState: d.lastState,
             isToggle: true,
-            lastStateString: d.lastState ? 'on' : 'off'
+            lastStateString: d.lastState ? 'on' : 'off',
+            harmonyControls: false
         };
+        if (d.deviceProto === 'harmony') {
+            sendableDevice.harmony = d.controlGroups;
+            sendableDevice.harmonyControls = true;
+        }
+        return sendableDevice;
     });
     return dev_list[id];
 }
 
 function getSendableDevices() {
     var dev_list = devices.map((d, ind) => { 
-        return {
+        var sendableDevice = {
             deviceID: ind,
             name: d.name,
             deviceType: d.deviceType,
@@ -280,8 +331,14 @@ function getSendableDevices() {
             groups: d.groups,
             lastState: d.lastState,
             isToggle: true,
-            lastStateString: d.lastState ? 'on' : 'off'
+            lastStateString: d.lastState ? 'on' : 'off',
+            harmonyControls: false
         };
+        if (d.deviceProto === 'harmony') {
+            sendableDevice.harmony = d.controlGroups;
+            sendableDevice.harmonyControls = true;
+        }
+        return sendableDevice;
     });
     return dev_list;
 }
@@ -410,13 +467,17 @@ app.route('/api/devices/:deviceID/set/:state').get( async (req, res) => {
     var index = parseInt(req.params.deviceID);
     var device = devices[index];
     if (device === undefined) {
-        res.send('requested device doesn\'t exist!');
+        res.send(null);
         //!!!!!!!!!!!!!!!!!!!!!!need to change this
         return;
     }
     var state = req.params.state === '1' ? true : (req.params.state === '0' ? false : undefined);
     
     let d = await device_tools.setDeviceState(device, state, modules);
+    if (d === undefined) {
+        res.json(null);
+        return;
+    }
     let dd = getSendableDevice(d.deviceID);
     res.json(dd);
 });

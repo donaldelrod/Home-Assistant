@@ -1,17 +1,17 @@
 /* DashboardComponent's private CSS styles */
 [class*='col-'] {
   float: left;
-  padding-right: 20px;
-  padding-bottom: 20px;
+  padding-right: 10px;
+  padding-bottom: 10px;
 }
 [class*='col-']:last-of-type {
   padding-right: 0;
 }
 
 .devices-tab {
-  width: 100% * 2/5;
+  width: 25%;
   position: relative;
-  z-index: 1;
+  // z-index: 1;
   top: 20px;
   left: 10px;
   background: #607d8b;

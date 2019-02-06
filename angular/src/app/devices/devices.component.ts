@@ -1,7 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { Device } from '../device';
 // import { DEVICES } from '../mock-devices';
-import { DeviceService } from '../device.service'
+import { DeviceService } from '../device.service';
+//import { HarmonyControls } from '../harmony-controls';
 
 @Component({
   selector: 'app-devices',

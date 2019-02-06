@@ -7,22 +7,22 @@
         {
             "type": "node",
             "request": "launch",
-            "name": "Debug Node",
+            "name": "Node",
             "program": "${workspaceFolder}\\server.js"
         },
         {
             "type": "chrome",
             "request": "launch",
-            "preLaunchTask": ["ng serve"],
-            "name": "Debug Angular",
+            //"preLaunchTask": ["ng serve"],
+            "name": "Angular",
             "url": "http://localhost:4200",
             "webRoot": "${workspaceFolder}\\angular\\"
-        },
+        }
     ],
     "compounds": [
         {
             "name": "Node/Angular",
-            "configurations": ["Debug Node", "Debug Angular"]
+            "configurations": ["Node", "Angular"]
         }
     ]
 }

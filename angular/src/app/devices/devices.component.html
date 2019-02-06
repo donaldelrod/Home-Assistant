@@ -1,12 +1,13 @@
-<h2>Connected Devices</h2>
-<ul class="devices">
-  <li *ngFor="let device of devices"
-   [class.selected]="device === selectedDevice"
-  (click)="onSelect(device)">
-    <span class="badge">{{device.deviceID}}:</span> {{device.name}}
-  </li>
-</ul>
+<div class="devices column">
+  <h2>Connected Devices</h2>
+  <ul>
+    <li *ngFor="let device of devices"
+    [class.selected]="device === selectedDevice"
+    (click)="onSelect(device)">
+      <span class="badge">{{device.deviceID}}:</span> {{device.name}}
+    </li>
+  </ul>
+  <app-device-messages></app-device-messages>
+</div>
 
-<app-device-detail [device]="selectedDevice"></app-device-detail>
-
-<app-device-messages></app-device-messages>
+<app-device-detail [device]="selectedDevice" class="devdeets column"></app-device-detail>

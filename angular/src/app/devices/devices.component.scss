@@ -11,7 +11,7 @@
 .devices li {
   cursor: pointer;
   position: relative;
-  left: 0;
+  left: -40px;
   background-color: #EEE;
   margin: .5em;
   padding: .3em 0;
@@ -25,7 +25,7 @@
 .devices li:hover {
   color: #607D8B;
   background-color: #DDD;
-  left: .1em;
+  left: -30px;
 }
 .devices .text {
   position: relative;
@@ -45,3 +45,24 @@
   margin-right: .8em;
   border-radius: 4px 0 0 4px;
 }
+
+.column {
+  float: left;
+  padding: 1px;
+}
+
+.devlist {
+  width: 25%;
+  left: 0;
+}
+
+.devdeets {
+  width: 75%;
+  // border-style: solid;
+  // border-width: 1px;
+}
+
+// .harmony {
+//   width: 40%;
+// }
+

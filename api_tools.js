@@ -9,7 +9,7 @@ module.exports = {
      * @param {string} url the url that the REST API call is at
      * @return {Promise<string>} the response from the URI
      */
-    getRestHttps: function(url) {
+    getRestHttps: async function(url) {
         var dat = '';
         return new Promise(function(resolve, reject) {
             https.get(url, function(res) {
@@ -42,7 +42,8 @@ module.exports = {
                     dat += dat_chunk;
                 });
                 res.on('end', function() {
-                    resolve(dat);
+                    var parsed = JSON.parse(dat);
+                    resolve(parsed);
                 });
                 res.on('error', function(err) {
                     console.log('http error');
@@ -50,6 +51,45 @@ module.exports = {
                     reject(undefined)
                 });
             }).end();
+        });
+    },
+    /**
+     * Sends a PUT request to the given host and returns a promise to its response
+     * @param {string} host the hostname of the address
+     * @param {string} path the path to the resource
+     * @param {string} body the request body
+     * @param {Object} headers header objects, empty by default
+     * @param {number} port port number, 80 by default
+     */
+    putRestHttp: async function(host, path, body, headers = {}, port = 80) {
+        var dat = '';
+        var options = {
+            host: host,
+            port: port,
+            path: path,
+            headers: headers,
+            method: 'PUT'//,
+            //protocol: 'http'
+        };
+        
+        return new Promise(function(resolve, reject) {
+            var req = http.request(options, (res) => {
+                res.setEncoding('utf8');
+                res.on('data', function(chunk) {
+                    dat += chunk;
+                });
+                res.on('error', function(err) {
+                    console.log('Failed PUT request...');
+                    reject('Failed PUT request');
+                });
+                res.on('end', function() {
+                    var parsed = JSON.parse(dat);
+                    console.log(parsed);
+                    resolve(parsed);
+                });
+            });
+            req.write(body);
+            req.end();
         });
     },
     /**
@@ -73,19 +113,6 @@ module.exports = {
                     reject(undefined)
                 })
             }).end();
-        });
-    },
-    /***
-     * This downloads the covers for the books that have data on Google Books
-     * @param {string} fn the filename of the cover to save
-     * @param {string} url the URL of the image
-     */
-    getGoogleCover: function(fn, url) {
-        this.getFileHttp(url).then(function(imageData) {
-            if (!file_tools.fileExists(fn)) {
-                file_tools.writeImageFile(fn, imageData);
-                console.log('image '+fn+' does not exist, downloading...');
-            } else console.log('image already downloaded');
         });
     },
     /**
@@ -127,127 +154,10 @@ module.exports = {
             });
             req.end();
         });
-    },
-    /***
-     * This function takes a JSON of values to aid in the search of the document, 
-     * queries the resource, and then returns JSON of the search results. 
-     * The object format for the input looks like this:
-     * 
-     * @param values = {
-     *      hasAuthor: boolean,
-     *      author:    string, --optional if hasAuthor is false
-     *      hasTitle:  boolean,
-     *      title:     string, --optional if hasTitle is false
-     *      hasISBN:   boolean,
-     *      isbn:      number --optional if hasISBN is false
-     * }
-     * @return Promise that resolves to the JSON object representing the document search results
-     */
-    lookupOnGoogle : function(values) {
-        if (!values.hasISBN && !values.hasAuthor && !values.hasTitle)
-            return {google: false};
-        
-        var googleURL = this.formGoogleURL(values);
-
-        return new Promise(function(resolve, reject) {
-            //sends the response to google and parses the result
-            this.getRestHttps(googleURL).then(function(raw) {
-                if (raw === undefined)
-                    reject({google: false}); 
-                var details = doc_tools.parseGoogleJSON(JSON.parse(raw));
-                resolve(details);
-            });
-        });
-    },
-    /***
-     * Forms the URL for the Google request with the inferred values for the documents
-     * 
-     * @param values = {
-     *      hasAuthor: boolean,
-     *      author:    string, --optional if hasAuthor is false
-     *      hasTitle:  boolean,
-     *      title:     string, --optional if hasTitle is false
-     *      hasISBN:   boolean,
-     *      isbn:      number --optional if hasISBN is false
-     * }
-     * @return string of the URL of search query
-     */
-    formGoogleURL: function(values) {
-        var googleAPIKey = 'AIzaSyBSb5T4qBCzXeIXIyXxqPeKMJldj7ryZsc';
-
-        var isbnString = values.hasISBN ? ('isbn=' + values.isbn) : '';
-        if (values.hasISBN && (values.hasAuthor || values.hasTitle))
-            isbnString += '+';
-        
-        var authorString = values.hasAuthor ? ('inauthor:' + encodeURI(values.author.split(',').join(''))) : '';
-        if (values.hasAuthor && values.hasTitle)
-            authorString += '+';
-
-        var titleString = values.hasTitle ? ("intitle:" + encodeURI(values.title)) : '';
-
-        return "https://www.googleapis.com/books/v1/volumes?q=" + isbnString + authorString + titleString + "&maxResults=40&key="+ googleAPIKey;
-    },
-    /***
-     * This function takes a JSON of values to aid in the search of the document. The object format looks like this:
-     * 
-     * @param values = {
-     *      hasAuthor: boolean,
-     *      author:    string, --optional if hasAuthor is false
-     *      hasTitle:  boolean,
-     *      title:     string, --optional if hasTitle is false
-     *      hasISBN:   boolean,
-     *      isbn:      number --optional if hasISBN is false
-     * }
-     * @return Promise that resolves to the JSON object representing the document search results
-     */
-    lookupOnWorldcat : function(values) {
-        if (!values.hasISBN && !values.hasAuthor && !values.hasTitle)
-            return {worldcat: false};
-
-        var worldcatURL = this.formWorldcatURL(values);
-
-        return new Promise(function(resolve, reject) {
-            //sends the response to worldcat and parses the result
-            this.getRestHttp(worldcatURL).then(function(raw) {
-                if (raw === undefined)
-                    reject({worldcat: false}); 
-
-                var details = doc_tools.parseWorldCatXML(JSON.parse(raw));
-
-                if (details === null || details === undefined)
-                    reject(undefined);
-
-                resolve(details);
-            });
-        });
-
-
-    },
-    /***
-     * Forms the URL for the Worldcat request with the inferred values for the documents
-     * 
-     * @param values = {
-     *      hasAuthor: boolean,
-     *      author:    string, --optional if hasAuthor is false
-     *      hasTitle:  boolean,
-     *      title:     string, --optional if hasTitle is false
-     *      hasISBN:   boolean,
-     *      isbn:      number --optional if hasISBN is false
-     * }
-     * @return string of the URL of search query
-     * */
-    formWorldcatURL : function(values) {
-        if (values.hasISBN)
-            return 'http://classify.oclc.org/classify2/Classify?isbn=' + values.isbn;
-
-        var authorString = values.hasAuthor ? ('author=' + encodeURI(values.author.split(',').join(''))) : '';
-        if (values.hasAuthor && values.hasTitle)
-            authorString += '&';
-
-        var titleString = values.hasTitle ? ("title=" + encodeURI(values.title)) : '';
-
-        return 'http://classify.oclc.org/classify2/Classify?' + authorString + titleString;
-    }
+    }//,
+    // parseURL: function (url) {
+    //     url
+    // }
 }
 
 /**

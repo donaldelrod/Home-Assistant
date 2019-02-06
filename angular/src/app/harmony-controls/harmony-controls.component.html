@@ -1,0 +1,13 @@
+<div *ngIf="harmony_device && harmony_device.harmonyControls">
+  <h2>Harmony Controls</h2>
+  <div *ngFor="let control_group of harmony_device.harmony" class="col-1-4">
+    <div class="controlgroup">
+      <h4>{{ control_group.name }}</h4>
+      <button *ngFor="let control of control_group.controls" class="toggleButton" class="col-1-4">{{ control.name }}</button> 
+    </div>
+  </div>
+</div>
+
+<!-- 
+  *ngIf="device.isToggle" 
+  (click)="toggleState(device, !device.lastState) -->
