@@ -1,4 +1,5 @@
 var hue = require('./hue.js');
+var file_tools = require('./file_tools.js');
 
 module.exports = {
     /**
@@ -255,7 +256,7 @@ module.exports = {
      * @param {Object} device Individual device from the array devices in server.js
      * @returns {Promise<boolean>} resolves to the status of the device
      */
-    getDeviceState(device) {
+    getDeviceState: function(device) {
         if (device.deviceProto === 'tplink') {
             return device.obj.relayState;
         } else if (device.deviceProto === 'tuyapi') {
@@ -263,6 +264,48 @@ module.exports = {
                 return status;
             }).catch((reason) => {console.log(reason); return undefined});
         }
+    },
+    /**
+     * Creates an example json file for users to fill out with
+     * Device data
+     */
+    createExampleDeviceConfig: function() {
+        var sampleDevices = [
+            {   
+                note: "So far the only devices that should be manually added currently are tplink and tuyapi devices. This object in the array should also be deleted"
+            },
+            {
+                name: "tplink Bedroom Lamp - Replace this with device name",
+                deviceID: 0,
+                deviceProto: "tplink",
+                deviceKind: "tplink-plug - this can actually be whatever but it can't be changed from the front end",
+                deviceType: "Wifi Plug -> Light - this can be changed from the front end",
+                ip: "Put IP of device here",
+                pollable: true,
+                groups: [
+                    "bedroom",
+                    "lights",
+                    "plugs"
+                ]
+            },
+            {
+                name: "Tuyapi Wifi Switch - Replace this with device name",
+                deviceID: 1,
+                deviceProto: "tuyapi",
+                deviceKind: "tuyapi-switch - this can actually be whatever but it can't be changed from the front end",
+                deviceType: "Wifi Switch -> Light - this can be changed from the front end",
+                ip: "Put IP Here",
+                id: "Tuyapi devices have a specific id and key - search online on how to find them (I used my iPhone)",
+                key: "Same as above, I will post instructions on how to do this later",
+                pollable: true,
+                groups: [
+                    "bedroom",
+                    "lights",
+                    "switches"
+                ]
+            }
+        ];
+        file_tools.writeJSONFile('devices.json', sampleDevices, function() {console.log("Sample device file successfully created")});
     }
 
 };

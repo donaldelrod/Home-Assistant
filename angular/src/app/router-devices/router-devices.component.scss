@@ -2,9 +2,20 @@
     float: left;
     border-style: solid;
     border-width: 1px;
+    border-style: solid;
+    border-width: 1px;
 }
 
 .router-device {
-    width: 46%;
-    left: 10px;
+    width: 50%;
+    //left: 10px;
 }
+
+[class*='col-'] {
+    float: left;
+    padding-right: 10px;
+    padding-bottom: 10px;
+  }
+  [class*='col-']:last-of-type {
+    padding-right: 0;
+  }

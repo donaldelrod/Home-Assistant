@@ -58,8 +58,9 @@ var modules         = {};
  * Processes all activities that can be run by the program, and schedules programs with timing triggers
  */
 function processActivities() {
+    //this schedules activities that happen at a particular time
     var activitiesToSchedule = activities.filter((eachActivity) => {
-        return eachActivity.triggers.timeofday !== undefined;
+        return (eachActivity.triggers.timeofday !== undefined && eachActivity.on);
     });
     if (activitiesToSchedule.length > 0) {
         activitiesToSchedule.map((scheduledActivity) => {
@@ -124,7 +125,7 @@ async function processModules(moduleList) {
         if (type.moduleName == 'proxmox') {
             try {
                 modules.prox = proxmox(type.details.user, type.details.password, type.details.ip);
-                console.log('Proxmox connected Successfully');
+                console.log('Proxmox api enabled');
             } catch(err) {
                 console.log(err);
             }            
@@ -228,7 +229,6 @@ async function processModules(moduleList) {
                 console.log('Harmony Hub connected successfully');
                 
             });
-            
         }
         else if (type.moduleName === 'hue') {
             modules.hue = {
@@ -266,6 +266,7 @@ async function processModules(moduleList) {
                     if (device.name === tempDevice.name)
                         inDevices = true;
                 });
+                
                 if (!inDevices)
                     devices.push(tempDevice);
                 i++;
@@ -297,6 +298,11 @@ function pollDevices() {
     });
 }
 
+/**
+ * Converts the device in the device list in memory to HTTP sendable devices
+ * @param {number} id the index of the device in the array of devices in memory
+ * @returns {JSON} the specified device in a sendable format
+ */
 function getSendableDevice(id) {
     var dev_list = devices.map((d, ind) => {
         var sendableDevice = {
@@ -320,6 +326,10 @@ function getSendableDevice(id) {
     return dev_list[id];
 }
 
+/**
+ * Converts the device list in memory to HTTP sendable devices
+ * @returns {JSON} the device list in a sendable format
+ */
 function getSendableDevices() {
     var dev_list = devices.map((d, ind) => { 
         var sendableDevice = {
@@ -356,6 +366,7 @@ function checkWhoIsHome() {
                 modules.netgearRouter.lastConnectedDevices = attached;
                 profiles.forEach(function(profile) {
                     var profileDevices = attached.filter((attd) => {
+                        //filters if one of the devices is in the person's identifiers
                         return profile.identifiers.ip.includes(attd.IP)
                     });
                     profile.strength = profileDevices.length;
@@ -366,7 +377,9 @@ function checkWhoIsHome() {
     }).catch(err => console.log(err));
 }
 
-
+/**
+ * Runs the setup function, which loads all config and saved device/profile/module/activity data, and processes them in their respective functions
+ */
 async function setup() {
     config          = await file_tools.readJSONFile(configPath);
     profiles        = await file_tools.readJSONFile(profilesPath);
@@ -382,9 +395,11 @@ async function setup() {
     console.log('Home Assistant will be checking who is home every ' + parseInt(config.whoIsHomeInterval)/60000 + ' minutes');
 
     pollDevices();
-    setInterval(pollDevices, parseInt(config.devicePollInterval)); //poll devices every 2.5 minutes
+    //schedules the function pollDevices() to execute at intervals specified in the config file
+    setInterval(pollDevices, parseInt(config.devicePollInterval)); 
 
     checkWhoIsHome();
+    //schedules the function checkWhoIsHome() to execute at intervals specified in the config file
     setInterval(checkWhoIsHome, parseInt(config.whoIsHomeInterval));
 
 }
@@ -699,7 +714,7 @@ app.route('/plex/webhook').post(upload.single('thumb'), (req, res, next) => {
     console.log(payload);
 
     activities.filter((eachActivity) => {
-        return eachActivity.triggers.plex !== undefined;
+        return (eachActivity.triggers.plex !== undefined && eachActivity.on);
     }).map((plexActivity) => {
         var triggerSpecs = plexActivity.triggers.plex;
         var eventMatch = triggerSpecs.event === undefined || triggerSpecs.event.includes(payload.event);
