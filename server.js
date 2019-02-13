@@ -4,15 +4,14 @@ var http            = require('http');
 var https           = require('https');
 var express         = require('express');
 var app             = express();
-var options         =   {  
+var httpsoptions         =   {  
                             key: fs.readFileSync('./https_key.pem', 'utf8'),  
                             cert: fs.readFileSync('./https_cert.crt', 'utf8')  
                         };
 var multer          = require('multer');
 var upload          = multer({dest: '/plexpass/'});
 var schedule        = require('node-schedule');
-var scheduledFunctions = [];
-var cors = require('cors');
+var cors            = require('cors');
 
 var platform = process.platform;
 
@@ -20,24 +19,19 @@ var platform = process.platform;
 //-------------API imports and Variables------------------------//
 const { Client }    = require('tplink-smarthome-api');
 const TPClient      = new Client();
-var proxmox         = require('proxmox');
-const NetgearRouter = require('netgear');
-var harmony         = require('harmonyhubjs-client');
 const TuyAPI        = require('tuyapi');
 
 
-//-------------Google Imports and Variables---------------------//
-const { google }    = require('googleapis');
-let google_oauth;
 
 //-------------personal modules--------------------------------//
 var file_tools      = require('./file_tools.js');
 var device_tools    = require('./device_tools.js');
 var prox_tools      = require('./prox_tools.js');
 var google_tools    = require('./google_tools.js');
-var hue             = require('./hue.js');
-//var module_tools    = require('./module_tools.js');
-//const { Device }    = require('./angular/device.ts');
+var hue_tools       = require('./hue_tools.js');
+var activity_tools  = require('./activity_tools.js');
+var netgear_tools   = require('./netgear_tools.js');
+var harmony_tools   = require('./harmony_tools.js');
 
 //-------------Program Variables------------------------------//
 const programPath   = __dirname;
@@ -52,6 +46,7 @@ var profiles        = [];
 var activities      = [];
 var config          = {};
 var modules         = {};
+var scheduledFunctions = [];
 
 
 /**
@@ -72,8 +67,8 @@ function processActivities() {
             j.jobname = scheduledActivity.name;
             scheduledFunctions.push(j);
         });
-        console.log('Scheduled ' + scheduledFunctions.length + ' activities, loaded a total of ' + activities.length + ' activities');
     }
+    console.log('Scheduled ' + scheduledFunctions.length + ' activities, loaded a total of ' + activities.length + ' activities');
 }
 
 /**
@@ -110,8 +105,6 @@ function processDevices(deviceList) {
             console.log(err);
         }
     });
-    //pollDevices();
-    //setInterval(pollDevices, 150000);
 }
 
 /**
@@ -121,161 +114,17 @@ function processDevices(deviceList) {
 async function processModules(moduleList) {
     console.log('Connecting to modules...');
     moduleList.forEach(async function(type) {
-        //deal with proxmox setup
-        if (type.moduleName == 'proxmox') {
-            try {
-                modules.prox = proxmox(type.details.user, type.details.password, type.details.ip);
-                console.log('Proxmox api enabled');
-            } catch(err) {
-                console.log(err);
-            }            
-        } 
-        //deal with google account setup
-        else if (type.moduleName == 'google') {
-            file_tools.readJSONFile(type.details.credentials).then(function (content) {
-                const {client_secret, client_id, redirect_uris} = content.installed;
-                google_oauth = new google.auth.OAuth2(
-                    client_id, client_secret, redirect_uris[0]);
-                
-                google_tools.authorize(type.details, google_oauth);
-            });
-        } 
-        //deal with netger router setup
-        else if (type.moduleName == 'netgear') {
-            modules.netgearRouter =  new NetgearRouter(type.details.password, type.details.username, type.details.host, type.details.port);
-            modules.netgearRouter.storedPass = type.details.password;
-            modules.netgearRouter.storedUser = type.details.username;
-            modules.netgearRouter.storedHost = type.details.host;
-            modules.netgearRouter.storedPort = type.details.port;
-            
-            modules.netgearRouter.routerDetails = modules.netgearRouter.discover().then(discovered => {
-                console.log('Netgear Router connected successfully');
-                // checkWhoIsHome();
-                // setInterval(checkWhoIsHome, 300000);
-                return discovered;
-            }).catch(err => console.log(err));
-        } 
-        //deal with harmony hub setup
-        else if (type.moduleName == 'harmony') {
-            modules.harmony = {};
-            modules.harmony.devices = [];
-            modules.harmony.hubs = [];
-            type.details.forEach(/*function*/ (harmonyHost, hi) => {
-                var hubInd = hi;
-                harmony(harmonyHost.host).then(function(hub) {
-                    hub.hubName = harmonyHost.hubName;
-                    modules.harmony.hubs.push(hub);
-                    //console.log(modules.harmony.hubs[hubInd]);
-                    //modules.harmony.hubs[hubInd].name = harmonyHost.hubName;
-                    /*modules.harmony.hubs[hubInd]*/
-                    hub.getAvailableCommands().then(function(rawCommands) {
-                        var tempHarmonyDevice;
-    
-                        var harmonyDevices = []; //what will be set to modules.harmony.devices
-                        rawCommands.device.forEach(function(rawDevice) {
-                            tempHarmonyDevice = {
-                                name: rawDevice.label,
-                                deviceID: devices.length,
-                                deviceProto: 'harmony',
-                                deviceKind: 'harmony-'+rawDevice.type,
-                                deviceType: rawDevice.type,
-                                ip: "",
-                                pollable: false,
-                                groups: [],
-                                controlPort: rawDevice.ControlPort,
-                                manufacturer: rawDevice.manufacturer,
-                                harmonyProfile: rawDevice.deviceProfileUri,
-                                deviceModel: rawDevice.model,
-                                isManualPower: rawDevice.isManualPower,
-                                controlGroups: [],
-                                lastState: false,
-                                belongsToHub: harmonyHost.hubName,
-                                hubInd: hubInd
-                            };
-                            rawDevice.controlGroup.forEach(function(cg) {
-                                tempCG = {
-                                    name: cg.name,
-                                    controls: []
-                                };
-                                cg.function.forEach(function(ctrl) {
-                                    tempCG.controls.push({
-                                        name: ctrl.name,
-                                        command: ctrl.action,
-                                        formattedCommand: ctrl.action.replace(/\:/g, '::')
-                                    });
-                                });
-                                tempHarmonyDevice.controlGroups.push(tempCG);
-                            });
-                            harmonyDevices.push(tempHarmonyDevice);
-                            var inDevices = false;
-                            devices.forEach(function(d) {
-                                if (d.name === tempHarmonyDevice.name)
-                                    inDevices = true;
-                            });
-    
-                            //only push to devices if the device is new, so harmony devices can be 
-                            //stored and further customized in the program
-                            //devices are saved to devices.json after being added once
-                            if (!inDevices)
-                                devices.push(tempHarmonyDevice);
-                        });
-                        harmonyDevices.forEach(function (harmDev) {
-                            modules.harmony.devices.push(harmDev);
-                        });
-                        
-                    });
-                    //hubInd++;
-                }).catch(err => console.log(err));
-                console.log('Harmony Hub connected successfully');
-                
-            });
-        }
-        else if (type.moduleName === 'hue') {
-            modules.hue = {
-                ip: type.details.host,
-                username: type.details.username
-            };
-            var hueDevices = await hue.getAllLights(modules);
-            var i = 1;
-            while(hueDevices[''+i] !== undefined) {
-                var hueDevice = hueDevices[''+i];
-                var tempDevice = {
-                    deviceID: devices.length,
-                    name: hueDevice.name,
-                    deviceType: hueDevice.type,
-                    deviceProto: 'hue',
-                    deviceKind: hueDevice.productid,
-                    manufacturer: hueDevice.manufacturername,
-                    groups: ['lights','hue'],
-                    lastState: hueDevice.state.on,
-                    isToggle: true,
-                    model: hueDevice.modelid,
-                    harmonyControl: false,
-                    hueControl: true,
-                    hue: {
-                        capabilities: hueDevice.capabilities,
-                        config: hueDevice.config,
-                        uid: hueDevice.uniqueid,
-                        swversion: hueDevice.swversion,
-                        state: hueDevice.state,
-                        hueID: i
-                    }
-                };
-                var inDevices = false;
-                devices.forEach(function (device) {
-                    if (device.name === tempDevice.name)
-                        inDevices = true;
-                });
-                
-                if (!inDevices)
-                    devices.push(tempDevice);
-                i++;
-            }
-            console.log('Hue successfully connected')
-            console.log(hueDevices);
-        }
-        //deal with opencv module, which will only be supported on linux/raspberry pi (for now at least)
-        else if (type.moduleName === 'opencv' && platform === 'linux') {
+        if (type.moduleName == 'proxmox') //deal with proxmox setup
+            prox_tools.processProxmox(modules, type);          
+        else if (type.moduleName == 'google') //deal with google account setup
+            google_tools.processGoogleAccount(modules, type);
+        else if (type.moduleName == 'netgear') //deal with netger router setup
+            netgear_tools.processNetgearRouter(modules, type);
+        else if (type.moduleName == 'harmony') //deal with harmony hub setup
+            harmony_tools.processHarmonyHubs(modules, devices, type);
+        else if (type.moduleName === 'hue') //deal with hue bridge setup
+            hue_tools.processHue(modules, devices, type);
+        else if (type.moduleName === 'opencv' && platform === 'linux') { //deal with opencv module, which will only be supported on linux/raspberry pi (for now at least)
             modules.cv = require('opencv4nodejs');
             modules.cv.webcam = new modules.cv.VideoCapture(parseInt(type.details.devicePort));
         }
@@ -291,8 +140,8 @@ function pollDevices() {
     devices.forEach( (eachDevice) => {
         if (eachDevice.pollable) {
             var state = device_tools.getDeviceState(eachDevice);
-            Promise.resolve(state).then((newState) => {
-                eachDevice.lastState = newState;
+            Promise.resolve(state).then((currentState) => {
+                eachDevice.lastState = currentState;
             }).catch(err => console.log(err));
         }
     });
@@ -357,24 +206,18 @@ function getSendableDevices() {
  * Queries the Netgear Router for the list of attached devices, and then checks the attached devices to see if they belong to anyone in the profiles list.
  * Profiles are updated with their owned devices, as well as a strength property that indicates the likelyhood they are at home
  */
-function checkWhoIsHome() {
+async function checkWhoIsHome() {
     //var attachedDevices;
     console.log('checking who is home');
-    modules.netgearRouter.login(modules.netgearRouter.storedPass, modules.netgearRouter.storedUser, modules.netgearRouter.storedHost, modules.netgearRouter.storedPort).then(function(successfulLogin) {
-        if (successfulLogin) {
-            modules.netgearRouter.getAttachedDevices().then((attached) => {
-                modules.netgearRouter.lastConnectedDevices = attached;
-                profiles.forEach(function(profile) {
-                    var profileDevices = attached.filter((attd) => {
-                        //filters if one of the devices is in the person's identifiers
-                        return profile.identifiers.ip.includes(attd.IP)
-                    });
-                    profile.strength = profileDevices.length;
-                    profile.devices = profileDevices;
-                });
-            });
-        }
-    }).catch(err => console.log(err));
+    var attachedDevices = await netgear_tools.getAttachedDevices(modules);
+    profiles.forEach(function(profile) {
+        var profileDevices = attachedDevices.filter((attd) => {
+            //filters if one of the devices is in the person's identifiers
+            return profile.identifiers.ip.includes(attd.IP)
+        });
+        profile.strength = profileDevices.length;
+        profile.devices = profileDevices;
+    });
 }
 
 /**
@@ -389,7 +232,8 @@ async function setup() {
     
     processDevices(deviceList);
     processModules(modules.list);
-    processActivities();
+    activity_tools.processActivities(activities, scheduledFunctions, schedule);
+    //processActivities();
 
     console.log('Home Assistant will be polling for device states every ' + parseInt(config.devicePollInterval)/60000 + ' minutes');
     console.log('Home Assistant will be checking who is home every ' + parseInt(config.whoIsHomeInterval)/60000 + ' minutes');
@@ -426,36 +270,35 @@ process.on('beforeExit', function(code) {
 app.use(cors());
 
 var nonsecureServer = http.createServer(app).listen(9875);
-var secureServer = https.createServer(options, app).listen(9876);
+var secureServer = https.createServer(httpsoptions, app).listen(9876);
 
 //----------------Device API
 
-//lists all the currently known/controllable devices
-app.route('/api/devices/list').get((req, res) => {
+function checkRequest(req, res) {
     // if (!req.secure) {
     //     res.status(401).send('Need HTTPS connection!');
     //     return;
     // } else 
     if (req.query.authToken !== config.authToken) {
         res.status(401).send('Need valid token!');
-        return;
+        return false;
     }
+    return true;
+}
+
+//lists all the currently known/controllable devices
+app.route('/api/devices/list').get((req, res) => {    
+    if (!checkRequest(req, res)) return;
+
     var dev_list = getSendableDevices();
- 
-    console.log(dev_list);
+    //console.log(dev_list);
     res.json(dev_list);
 });
 
 //gets info about the specific device
 app.route('/api/devices/:deviceID/info').get(async (req, res) => {
-    // if (!req.secure) {
-    //     res.status(401).send('Need HTTPS connection!');
-    //     return;
-    // } else 
-    if (req.query.authToken !== config.authToken) {
-        res.status(401).send('Need valid token!');
-        return;
-    }
+    if (!checkRequest(req, res)) return;
+
     var index = parseInt(req.params.deviceID);
     // if (devices[index].deviceProto === 'tplink') {
     //     var info = await devices[index].getSysInfo();/*.then(function (deviceInfo) {
@@ -471,19 +314,13 @@ app.route('/api/devices/:deviceID/info').get(async (req, res) => {
 
 //sets the state of an individual device
 app.route('/api/devices/:deviceID/set/:state').get( async (req, res) => {
-    // if (!req.secure) {
-    //     res.status(401).send('Need HTTPS connection!');
-    //     return;
-    // } else 
-    if (req.query.authToken !== config.authToken) {
-        res.status(401).send('Need valid token!');
-        return;
-    }
+    if (!checkRequest(req, res)) return;
+
     var index = parseInt(req.params.deviceID);
     var device = devices[index];
     if (device === undefined) {
         res.send(null);
-        //!!!!!!!!!!!!!!!!!!!!!!need to change this
+        //!!!!!!!!!!!!!!!!!!!!!!need to change this!!!!!!!!!!!!!!!!!!!!!!!!!!
         return;
     }
     var state = req.params.state === '1' ? true : (req.params.state === '0' ? false : undefined);
@@ -499,14 +336,8 @@ app.route('/api/devices/:deviceID/set/:state').get( async (req, res) => {
 
 //controls the state of a group of devices
 app.route('/api/groups/:control').get((req, res) => {
-    // if (!req.secure) {
-    //     res.status(401).send('Need HTTPS connection!');
-    //     return;
-    // } else 
-    if (req.query.authToken !== config.authToken) {
-        res.status(401).send('Need valid token!');
-        return;
-    }
+    if (!checkRequest(req, res)) return;
+
     var groups = req.query.groups;
     var control = parseInt(req.params.control);
     var controlGroup = [];
@@ -545,14 +376,8 @@ app.route('/api/groups/:control').get((req, res) => {
 
 //runs the activity with the name :name
 app.route('/api/activities/name/:name').get((req, res) => {
-    // if (!req.secure) {
-    //     res.status(401).send('Need HTTPS connection!');
-    //     return;
-    // } else 
-    if (req.query.authToken !== config.authToken) {
-        res.status(401).send('Need valid token!');
-        return;
-    }
+    if (!checkRequest(req, res)) return;
+
     device_tools.runActivity(modules, activities, devices, req.params.name).then((success) => {
         res.status(success ? 200 : 503).send( (success ? 'successfully ran ' : 'failed to run ') + 'activity ' + req.params.name);
     });
@@ -560,27 +385,15 @@ app.route('/api/activities/name/:name').get((req, res) => {
 
 //returns the list of people at the house
 app.route('/api/people/list').get((req, res) => {
-    // if (!req.secure) {
-    //     res.status(401).send('Need HTTPS connection!');
-    //     return;
-    // } else 
-    if (req.query.authToken !== config.authToken) {
-        res.status(401).send('Need valid token!');
-        return;
-    }
+    if (!checkRequest(req, res)) return;
+
     res.json(profiles);
 });
 
 //return all scheduled activities
 app.route('/api/activities/scheduled').get((req, res) => {
-    // if (!req.secure) {
-    //     res.status(401).send('Need HTTPS connection!');
-    //     return;
-    // } else 
-    if (req.query.authToken !== config.authToken) {
-        res.status(401).send('Need valid token!');
-        return;
-    }
+    if (!checkRequest(req, res)) return;
+
     var sch = scheduledFunctions.map((eachFunction) => {
         return eachFunction.jobname;
     });
@@ -593,20 +406,16 @@ app.route('/api/activities/scheduled').get((req, res) => {
 app.route('/oauth2/google').get((req, res) => {
     var token_code = req.query.code;
     var scope_oauth = req.query.scope;
-    res.send(google_tools.saveAccessToken(google_oauth, token_code));
+    //res.send(google_tools.saveAccessToken(google_oauth, token_code));
+    res.send(google_tools.saveAccessToken(modules.google.google_oauth, token_code));
 });
 
 //gets upcoming events in your Google Calendar
 app.route('/api/modules/google/cal/upcoming').get((req, res) => {
-    // if (!req.secure) {
-    //     res.status(401).send('Need HTTPS connection!');
-    //     return;
-    // } else 
-    if (req.query.authToken !== config.authToken) {
-        res.status(401).send('Need valid token!');
-        return;
-    }
-    google_tools.getGCalEvents(google_oauth, 15).then(function (events) {
+    if (!checkRequest(req, res)) return;
+
+    //google_tools.getGCalEvents(google_oauth, 15).then(function (events) {
+    google_tools.getGCalEvents(modules.google.google_oauth, 15).then(function (events) {
         res.json(events);
     }).catch(function (reason) {
         res.send(reason);
@@ -615,50 +424,36 @@ app.route('/api/modules/google/cal/upcoming').get((req, res) => {
 
 //doesn't really do anything but I'm leaving it here to remind me to fix it
 app.route('/api/modules/google/gmail/labels').get((req, res) => {
-    // if (!req.secure) {
-    //     res.status(401).send('Need HTTPS connection!');
-    //     return;
-    // } else 
-    if (req.query.authToken !== config.authToken) {
-        res.status(401).send('Need valid token!');
-        return;
-    }
-    google_tools.getGmailLabels(google_oauth);
+    if (!checkRequest(req, res)) return;
+
+    //google_tools.getGmailLabels(google_oauth);
+    google_tools.getGmailLabels(modules.google.google_oauth);
     res.sendStatus(200);
+});
+
+//doesn't really work right now
+app.route('/api/modules/google/gmail/emails').get(async (req, res) => {
+    if (!checkRequest(req, res)) return;
+
+    //google_tools.getGmailLabels(google_oauth);
+    var emails = await google_tools.getRecentEmails(modules.google.google_oauth);
+    res.send(200, emails);
 });
 
 //-------------------------Netgear API
 
 //returns all the devices connected to the netgear router
-app.route('/api/netgearrouter/attached').get((req, res) => {
-    // if (!req.secure) {
-    //     res.status(401).send('Need HTTPS connection!');
-    //     return;
-    // } else 
-    if (req.query.authToken !== config.authToken) {
-        res.status(401).send('Need valid token!');
-        return;
-    }
-    modules.netgearRouter.login(modules.netgearRouter.storedPass, modules.netgearRouter.storedUser, modules.netgearRouter.storedHost, modules.netgearRouter.storedPort).then(function(successfulLogin) {
-        if (successfulLogin) {
-            modules.netgearRouter.getAttachedDevices().then(function(attached) {
-                modules.netgearRouter.lastConnectedDevices = attached;
-                res.send(attached);
-            });
-        }
-    });
+app.route('/api/netgearrouter/attached').get(async (req, res) => {
+    if (!checkRequest(req, res)) return;
+
+    var attachedDevices = await netgear_tools.getAttachedDevices(modules);
+    res.send(attachedDevices);
 });
 
 //returns info about the netgear router
 app.route('/api/netgearrouter/info').get((req, res) => {
-    // if (!req.secure) {
-    //     res.status(401).send('Need HTTPS connection!');
-    //     return;
-    // } else 
-    if (req.query.authToken !== config.authToken) {
-        res.status(401).send('Need valid token!');
-        return;
-    }
+    if (!checkRequest(req, res)) return;
+
     modules.netgearRouter.login(modules.netgearRouter.storedPass, modules.netgearRouter.storedUser, modules.netgearRouter.storedHost, modules.netgearRouter.storedPort).then(function(successfulLogin) {
         if (successfulLogin) {
             modules.netgearRouter.getInfo().then(function(info) {
@@ -672,38 +467,24 @@ app.route('/api/netgearrouter/info').get((req, res) => {
 
 //send all the harmony devices
 app.route('/api/modules/harmony/devices').get((req, res) => {
-    // if (!req.secure) {
-    //     res.status(401).send('Need HTTPS connection!');
-    //     return;
-    // } else 
-    if (req.query.authToken !== config.authToken) {
-        res.status(401).send('Need valid token!');
-        return;
-    }
+    if (!checkRequest(req, res)) return;
+
     res.json(modules.harmony.devices);
 });
 
 //control a specific harmony device by specifying a device name, control group and control
 app.route('/api/modules/harmony/control/:device_name/:control_group/:control').get((req, res) => {
-    // if (!req.secure) {
-    //     res.status(401).send('Need HTTPS connection!');
-    //     return;
-    // } else 
-    if (req.query.authToken !== config.authToken) {
-        res.status(401).send('Need valid token!');
-        return;
-    }
+    if (!checkRequest(req, res)) return;
+
     var selectedControl = device_tools.getHarmonyControl(modules, req.params.device_name, req.params.control_group, req.params.control);
 
     if (selectedControl !== undefined) {
-        device_tools.sendHarmonyCommand(modules, selectedControl.formattedCommand);
+        harmony_tools.sendHarmonyCommand(modules, selectedControl.formattedCommand);
         res.sendStatus(200);
     } else {
         console.log('Harmony control not found: ' + req.params.control_group + ' ' + req.params.control);
         res.status(503).send('Harmony control could not be found...');
     }
-    
-    
 });
 
 //------------------Plex API
@@ -711,7 +492,7 @@ app.route('/api/modules/harmony/control/:device_name/:control_group/:control').g
 //reacts to plex's webhooks, and will look through activities to see if any will be triggered by this webhook
 app.route('/plex/webhook').post(upload.single('thumb'), (req, res, next) => {
     var payload = JSON.parse(req.body.payload);
-    console.log(payload);
+    //console.log(payload);
 
     activities.filter((eachActivity) => {
         return (eachActivity.triggers.plex !== undefined && eachActivity.on);
@@ -731,14 +512,9 @@ app.route('/plex/webhook').post(upload.single('thumb'), (req, res, next) => {
 //--------------OpenCV API
 
 app.route('/api/opencv/takepic').get((req, res) => {
-    // if (!req.secure) {
-    //     res.status(401).send('Need HTTPS connection!');
-    //     return;
-    // } else 
-    if (req.query.authToken !== config.authToken) {
-        res.status(401).send('Need valid token!');
-        return;
-    } else if (platform !== 'linux') {
+    if (!checkRequest(req, res)) return;
+    
+    if (platform !== 'linux') {
         res.status(401).send('OpenCV only supported on Raspberry Pi');
         return;
     }
@@ -747,32 +523,24 @@ app.route('/api/opencv/takepic').get((req, res) => {
 });
 
 app.route('/api/opencv/listpics').get((req, res) => {
-    // if (!req.secure) {
-    //     res.status(401).send('Need HTTPS connection!');
-    //     return;
-    // } else 
-    if (req.query.authToken !== config.authToken) {
-        res.status(401).send('Need valid token!');
-        return;
-    } else if (platform !== 'linux') {
+    if (!checkRequest(req, res)) return;
+    
+    if (platform !== 'linux') {
         res.status(401).send('OpenCV only supported on Raspberry Pi');
         return;
     }
+
     var pictures = file_tools.getChildren('./opencv/');
+
     if (pictures !== undefined)
         res.status(200).json(pictures);
     else res.status(401).send('Couldn\'t get pictures');
 });
 
-app.route('/api/opencv/getpic/:filename').get((req, res) => {
-    // if (!req.secure) {
-    //     res.status(401).send('Need HTTPS connection!');
-    //     return;
-    // } else 
-    if (req.query.authToken !== config.authToken) {
-        res.status(401).send('Need valid token!');
-        return;
-    } else if (platform !== 'linux') {
+app.route('/api/opencv/getpic/:filename').get((req, res) => { //idk if this works
+    if (!checkRequest(req, res)) return;
+    
+    if (platform !== 'linux') {
         res.status(401).send('OpenCV only supported on Raspberry Pi');
         return;
     }
@@ -783,4 +551,11 @@ app.route('/api/opencv/getpic/:filename').get((req, res) => {
         });
         fs.createReadStream(req.query.filename).pipe(res);
     }
+});
+
+//--------------------Debug API
+
+app.route('/debug/modules').get( (req, res) => {
+    console.log(modules);
+    res.send(200, "bet thanks").end();
 });

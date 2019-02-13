@@ -1,18 +1,19 @@
-var hue = require('./hue.js');
+var hue_tools = require('./hue_tools.js');
+var harmony_tools = require('./harmony_tools.js');
 var file_tools = require('./file_tools.js');
 
 module.exports = {
-    /**
-     * Sends the formatted command to the connected Harmony Hub
-     * @param {Object} modules modules object from server.js
-     * @param {string} formattedCommand Harmony-specific command string, tells the hub what button to emulate
-     */
-    sendHarmonyCommand: function(modules, formattedCommand, hubName) {
-        var hub = modules.harmony.hubs.filter(h => {
-            return h.hubName === hubName;
-        }).pop();//[hubInd];
-        hub.send('holdAction', 'action=' + formattedCommand + ':status=press');
-    },
+    // /**
+    //  * Sends the formatted command to the connected Harmony Hub
+    //  * @param {Object} modules modules object from server.js
+    //  * @param {string} formattedCommand Harmony-specific command string, tells the hub what button to emulate
+    //  */
+    // sendHarmonyCommand: function(modules, formattedCommand, hubName) {
+    //     var hub = modules.harmony.hubs.filter(h => {
+    //         return h.hubName === hubName;
+    //     }).pop();//[hubInd];
+    //     hub.send('holdAction', 'action=' + formattedCommand + ':status=press');
+    // },
     /**
      * Sets the state of supported devices/protocols. Supported devices currently are:
      * - tplink
@@ -46,7 +47,7 @@ module.exports = {
                 var powerControl = this.getHarmonyControl(modules, device.name, 'Power', 'PowerToggle');
 
                 if (powerControl !== undefined) {
-                    this.sendHarmonyCommand(modules, powerControl.formattedCommand, device.belongsToHub);
+                    harmony_tools.sendHarmonyCommand(modules, powerControl.formattedCommand, device.belongsToHub);
                     device.lastState = device.lastState === undefined ? undefined : !device.lastState;
                 } else {
                     console.log('Harmony control not found: Power PowerToggle');
@@ -78,7 +79,7 @@ module.exports = {
             var powerControl = this.getHarmonyControl(modules, device.name, 'Power', control);
 
             if (powerControl !== undefined) {
-                this.sendHarmonyCommand(modules, powerControl.formattedCommand, device.belongsToHub);
+                harmony_tools.sendHarmonyCommand(modules, powerControl.formattedCommand, device.belongsToHub);
                 power_state = state;
                 device.lastState = state;
             } else {
@@ -86,7 +87,7 @@ module.exports = {
                 return undefined;
             }
         } else if (device.deviceProto === 'hue') {
-            await hue.setLightState(modules, device.hue.hueID, state);
+            await hue_tools.setLightState(modules, device.hue.hueID, state);
             device.lastState = state;
             //if (ret[0]['success'] === undefined)
             //    return undefined;
@@ -171,7 +172,7 @@ module.exports = {
      * @returns {Object} the writable version of the modules object
      */
     getWritableModules: function(modules) {
-        console.log(modules);
+        //console.log(modules);
         return modules; //this is definitely not right, might have to edit modules only when changes are made to the config
     },
     /**
@@ -180,7 +181,7 @@ module.exports = {
      * @returns {Object} the writable version of the profiles object
      */
     getWritableProfiles: function(profiles) {
-        console.log(profiles);
+        //console.log(profiles);
         return profiles;
     },
     /**
@@ -189,7 +190,7 @@ module.exports = {
      * @returns {Object} the writable version of the activities object
      */
     getWritableActivities: function(activities) {
-        console.log(activities);
+        //console.log(activities);
         return activities;
     },
     /**
@@ -237,7 +238,7 @@ module.exports = {
                 var selectedControl = this.getHarmonyControl(modules, commandingDevice.name, controlGroup, control);
 
                 if (selectedControl !== undefined) {
-                    this.sendHarmonyCommand(modules, selectedControl.formattedCommand, commandingDevice.hubInd);
+                    harmony_tools.sendHarmonyCommand(modules, selectedControl.formattedCommand, commandingDevice.hubInd);
 
                     //update last state of device if the is a power command
                     if (controlGroup === 'Power')

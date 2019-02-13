@@ -84,7 +84,7 @@ module.exports = {
                 });
                 res.on('end', function() {
                     var parsed = JSON.parse(dat);
-                    console.log(parsed);
+                    //console.log(parsed);
                     resolve(parsed);
                 });
             });
@@ -148,7 +148,7 @@ module.exports = {
                 });
                 res.on('end', function() {
                     var parsed = JSON.parse(dat);
-                    console.log(parsed);
+                    //console.log(parsed);
                     resolve(parsed);
                 });
             });

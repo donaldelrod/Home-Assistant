@@ -80,7 +80,7 @@ module.exports = {
             console.log('settings exist')
             settings = this.readJSONFile(configFile, callback);
         }
-        console.log(settings);
+        //console.log(settings);
         return settings;
     },
     /**
