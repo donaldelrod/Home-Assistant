@@ -10,7 +10,7 @@ import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 })
 export class DeviceService {
 
-  private devicesURL = 'http://192.168.1.2:9875/api/devices/';
+  private devicesURL = 'http://ha.donaldelrod.com/api/devices/';
 
   private authString = '?authToken=xbbnq6y824006067';
 

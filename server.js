@@ -267,7 +267,13 @@ process.on('beforeExit', function(code) {
     console.log('safely exiting the program');
 });
 
-app.use(cors());
+//app.use(cors());
+
+app.use(function(req, res, next) {
+    res.header("Access-Control-Allow-Origin", "*");
+    res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+    next();
+});
 
 var nonsecureServer = http.createServer(app).listen(9875);
 var secureServer = https.createServer(httpsoptions, app).listen(9876);
