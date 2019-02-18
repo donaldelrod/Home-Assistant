@@ -20,7 +20,7 @@ module.exports = {
                 j.jobname = scheduledActivity.name;
                 scheduledFunctions.push(j);
             });
-            console.log('Scheduled ' + scheduledFunctions.length + ' activities, loaded a total of ' + activities.length + ' activities');
         }
+        console.log('Scheduled ' + scheduledFunctions.length + ' activities, loaded a total of ' + activities.length + ' activities');
     }
 }

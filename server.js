@@ -1,3 +1,4 @@
+'use strict';
 //-------------NPM modules and Variables------------------------//
 var fs              = require('fs');
 var http            = require('http');
@@ -20,7 +21,6 @@ var platform = process.platform;
 const { Client }    = require('tplink-smarthome-api');
 const TPClient      = new Client();
 const TuyAPI        = require('tuyapi');
-
 
 
 //-------------personal modules--------------------------------//
