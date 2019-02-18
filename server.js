@@ -125,8 +125,8 @@ async function processModules(moduleList) {
         else if (type.moduleName === 'hue') //deal with hue bridge setup
             hue_tools.processHue(modules, devices, type);
         else if (type.moduleName === 'opencv' && platform === 'linux') { //deal with opencv module, which will only be supported on linux/raspberry pi (for now at least)
-            modules.cv = require('opencv4nodejs');
-            modules.cv.webcam = new modules.cv.VideoCapture(parseInt(type.details.devicePort));
+            //modules.cv = require('opencv4nodejs');
+            //modules.cv.webcam = new modules.cv.VideoCapture(parseInt(type.details.devicePort));
         }
     });
 }
