@@ -1,5 +1,6 @@
 <h3>Dashboard</h3>
 <div class="devices-tab">
+  <h2>&nbsp;&nbsp;Devices</h2>
     <div *ngFor="let device of devices" class="col-1-4">
       <div class="module">
         <a routerLink="/device/detail/{{device.deviceID}}">
@@ -10,5 +11,10 @@
     </div>
 </div>
 <div class="router-tab">
+  <h2>&nbsp;&nbsp;Devices on Router</h2>
   <app-router-devices></app-router-devices>
+</div>
+<div class="profiles-tab">
+  <h2>Profiles</h2>
+  <app-profiles></app-profiles>
 </div>

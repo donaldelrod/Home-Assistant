@@ -1,5 +1,5 @@
 <div *ngIf="routerDevices">
-  <div class="col-1-2 router-device" *ngFor="let rd of routerDevices">
+  <div class="col-1-2 router-device router-info" *ngFor="let rd of routerDevices">
     <label>Name: {{ rd.Name | slice:0:14 }}</label><br>
     <label>IP: {{ rd.IP }}</label><br>
     <label>MAC: {{ rd.MAC | lowercase }}</label><br>

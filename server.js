@@ -278,7 +278,9 @@ app.use(function(req, res, next) {
 var nonsecureServer = http.createServer(app).listen(9875);
 var secureServer = https.createServer(httpsoptions, app).listen(9876);
 
-//----------------Device API
+//-------------------------------------------------------API Endpoints from here on
+
+//----------------------------------------------Device API
 
 function checkRequest(req, res) {
     // if (!req.secure) {
@@ -340,6 +342,17 @@ app.route('/api/devices/:deviceID/set/:state').get( async (req, res) => {
     res.json(dd);
 });
 
+//-----------------------------------------Profiles API
+
+app.route('/api/profiles').get( (req, res) => {
+    if (!checkRequest(req, res)) return;
+
+    res.json(profiles);
+});
+
+//-----------------------------------------Group API
+
+
 //controls the state of a group of devices
 app.route('/api/groups/:control').get((req, res) => {
     if (!checkRequest(req, res)) return;
@@ -379,6 +392,8 @@ app.route('/api/groups/:control').get((req, res) => {
     }
     res.send('success');
 });
+
+//-----------------------------------Activity API
 
 //runs the activity with the name :name
 app.route('/api/activities/name/:name').get((req, res) => {
@@ -446,7 +461,7 @@ app.route('/api/modules/google/gmail/emails').get(async (req, res) => {
     res.send(200, emails);
 });
 
-//-------------------------Netgear API
+//------------------------------------Netgear API
 
 //returns all the devices connected to the netgear router
 app.route('/api/netgearrouter/attached').get(async (req, res) => {
@@ -493,7 +508,7 @@ app.route('/api/modules/harmony/control/:device_name/:control_group/:control').g
     }
 });
 
-//------------------Plex API
+//-----------------------------------------Plex API
 
 //reacts to plex's webhooks, and will look through activities to see if any will be triggered by this webhook
 app.route('/plex/webhook').post(upload.single('thumb'), (req, res, next) => {
@@ -515,7 +530,7 @@ app.route('/plex/webhook').post(upload.single('thumb'), (req, res, next) => {
     res.sendStatus(200);
 });
 
-//--------------OpenCV API
+//---------------------------------------------OpenCV API
 
 app.route('/api/opencv/takepic').get((req, res) => {
     if (!checkRequest(req, res)) return;
@@ -559,7 +574,7 @@ app.route('/api/opencv/getpic/:filename').get((req, res) => { //idk if this work
     }
 });
 
-//--------------------Debug API
+//----------------------------------------------------Debug API
 
 app.route('/debug/modules').get( (req, res) => {
     console.log(modules);
