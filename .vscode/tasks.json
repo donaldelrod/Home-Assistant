@@ -17,6 +17,20 @@
             },
             "group": "test",
             "isBackground": true
+        },
+        {
+            "label": "docs",
+            "type":"shell",
+            "command": "jsdoc",
+            "args": [
+                "-d",
+                "./doc/",
+                "."
+            ],
+            "options" : {
+                "cwd": "${workspaceRoot}"
+            },
+            "group": "build"
         }
     ]
 }

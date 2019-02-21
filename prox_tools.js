@@ -1,4 +1,13 @@
+/**
+ * @fileoverview Collection of functions that deal with connecting to/controlling a server running Proxmox
+ * @author Donald Elrod
+ * @version 1.0.0
+ */
 var proxmox         = require('proxmox');
+/**
+ * Collection of functions that deal with connecting to/controlling a server running Proxmox
+ * @exports prox_tools
+ */
 module.exports = {
     /**
      * Processes the activation of the Proxmox module
