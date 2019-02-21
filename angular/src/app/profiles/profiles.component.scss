@@ -1,0 +1,21 @@
+.profiles {
+    float: left;
+    border-style: solid;
+    border-width: 1px;
+    border-style: solid;
+    border-width: 1px;
+    border-color: white;
+    width: 80%;
+    color: black;
+}
+
+[class*='col-'] {
+    float: left;
+    margin-right: 5px;
+    padding-bottom: 10px;
+    margin-left: 10px;
+}
+
+[class*='col-']:last-of-type {
+padding-right: 0;
+}

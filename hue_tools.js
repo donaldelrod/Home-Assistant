@@ -67,12 +67,13 @@ module.exports = {
         return light;
     },
     setLightState: async function (modules, lightID, state) {
-        var baseHost = 'http://' + modules.hue.ip;
+        var baseHost = modules.hue.ip;
         var basePath = '/api/' + modules.hue.username;
-        var baseURL = baseHost + basePath;
-        var path = baseURL + '/lights/' + lightID + "/state";
+        //var baseURL = baseHost + basePath;
+        var path = basePath + '/lights/' + lightID + "/state";
         var body =  JSON.stringify({on:state});
-        await api_tools.putRestHttp(baseHost, path, body);
+        api_tools.putRestHttp(baseHost, path, body)
+            .catch(reason => console.log(reason));
         //return succ;
     }
 }

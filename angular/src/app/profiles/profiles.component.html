@@ -1,3 +1,4 @@
-<p>
-  profiles works!
-</p>
+<div class="profiles col-1-1" *ngFor="let profile of profiles">
+  Name: {{profile.person}}<br>
+  Is Home?: {{ (profile.strength / profile.identifiers.ip.length) * 100}}%<br>
+</div>

@@ -12,7 +12,7 @@ export class DeviceService {
 
   private devicesURL = 'http://donaldelrod.ddns.net:9875/api/devices/';
 
-  private authString = '?authToken=xbbnq6y824006067';
+  //private authString = '?authToken=xbbnq6y824006067';
 
   private options = {
     params: new HttpParams().set('authToken', 'xbbnq6y824006067')
