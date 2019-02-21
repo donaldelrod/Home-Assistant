@@ -84,7 +84,10 @@ module.exports = {
                         });
                     });
                     //hubInd++;
-                }).catch(err => console.log(err));
+                }).catch( (err) => {
+                    console.log(err);
+                    console.log("unable to connect to harmony hub");
+                });
                 console.log('Harmony Hub connected successfully');
             });
     },
