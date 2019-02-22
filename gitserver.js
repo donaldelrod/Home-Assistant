@@ -9,6 +9,8 @@ var server = http.createServer(app).listen(9877);
 
 let shell = null;
 
+console.log('Starting home-assistant gitwatcher\n\n\n');
+
 app.route('/git').post( (req, res) => {
 
     console.log('git push detected...');
