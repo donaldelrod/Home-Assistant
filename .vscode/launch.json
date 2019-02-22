@@ -17,6 +17,12 @@
             "name": "Angular",
             "url": "http://localhost:4200",
             "webRoot": "${workspaceFolder}\\angular\\"
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Gitwatcher",
+            "program": "${workspaceFolder}\\gitserver.js"
         }
     ],
     "compounds": [
