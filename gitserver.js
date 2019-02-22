@@ -26,7 +26,7 @@ app.route('/git').post( (req, res) => {
         }
     }
 
-    shell = exec('npm build-n-run');
+    shell = exec('npm run build-n-run');
 
     shell.on('exit', function (code, signal) {
         console.log(`server.js exited with code ${code} and signal ${signal}`);
