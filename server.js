@@ -1,3 +1,9 @@
+/**
+ * @fileoverview Main file for the program, server.js initiates all program logic and contains all api endpoints
+ * @author Donald Elrod
+ * @version 1.0.0
+ */
+
 'use strict';
 //-------------NPM modules and Variables------------------------//
 var fs              = require('fs');
@@ -12,7 +18,7 @@ var httpsoptions         =   {
 var multer          = require('multer');
 var upload          = multer({dest: '/plexpass/'});
 var schedule        = require('node-schedule');
-var cors            = require('cors');
+//var cors            = require('cors');
 
 var platform = process.platform;
 
@@ -35,11 +41,11 @@ var harmony_tools   = require('./harmony_tools.js');
 
 //-------------Program Variables------------------------------//
 const programPath   = __dirname;
-var modulesPath     = './modules.json';
-var devicesPath     = './devices.json'; 
-var activitiesPath  = './activities.json';
-var profilesPath    = './profiles.json';
-var configPath      = './config.json';
+var modulesPath     = './config/modules.json';
+var devicesPath     = './config/devices.json'; 
+var activitiesPath  = './config/activities.json';
+var profilesPath    = './config/profiles.json';
+var configPath      = './config/config.json';
 
 var devices         = [];
 var profiles        = [];
@@ -269,13 +275,16 @@ process.on('beforeExit', function(code) {
 
 //app.use(cors());
 
+//adds cors functionality
 app.use(function(req, res, next) {
     res.header("Access-Control-Allow-Origin", "*");
     res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
     next();
 });
 
-app.use('/docs', express.static('docs'));
+//lets the documentation pages be served
+app.use('/docs', express.static('compiled/docs'));
+app.use('/', express.static('compiled/ng'));
 
 var nonsecureServer = http.createServer(app).listen(9875);
 var secureServer = https.createServer(httpsoptions, app).listen(9876);

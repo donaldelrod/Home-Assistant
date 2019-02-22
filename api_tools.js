@@ -23,20 +23,25 @@ module.exports = {
     getRestHttps: async function(url) {
         var dat = '';
         return new Promise(function(resolve, reject) {
-            https.get(url, function(res) {
-                res.setEncoding('utf8');
-                res.on('data', function (dat_chunk) {
-                    dat += dat_chunk;
-                });
-                res.on('end', function() {
-                    resolve(dat);
-                });
-                res.on('error', function(err) {
-                    console.log('https error');
-                    console.error(err);
-                    reject(undefined)
-                })
-            }).end();
+            try {
+                https.get(url, function(res) {
+                    res.setEncoding('utf8');
+                    res.on('data', function (dat_chunk) {
+                        dat += dat_chunk;
+                    });
+                    res.on('end', function() {
+                        resolve(dat);
+                    });
+                    res.on('error', function(err) {
+                        console.log('https error');
+                        console.error(err);
+                        reject(err)
+                    });
+                }).end();
+            } catch (err) {
+                console.log(err);
+                reject(err);
+            }
         });
     },
     /**
@@ -47,21 +52,26 @@ module.exports = {
     getRestHttp: function(url) {
         var dat = '';
         return new Promise(function(resolve, reject) {
-            http.get(url, function(res) {
-                res.setEncoding('utf8');
-                res.on('data', function (dat_chunk) {
-                    dat += dat_chunk;
-                });
-                res.on('end', function() {
-                    var parsed = JSON.parse(dat);
-                    resolve(parsed);
-                });
-                res.on('error', function(err) {
-                    console.log('http error');
-                    console.error(err);
-                    reject(undefined)
-                });
-            }).end();
+            try {
+                http.get(url, function(res) {
+                    res.setEncoding('utf8');
+                    res.on('data', function (dat_chunk) {
+                        dat += dat_chunk;
+                    });
+                    res.on('end', function() {
+                        var parsed = JSON.parse(dat);
+                        resolve(parsed);
+                    });
+                    res.on('error', function(err) {
+                        console.log('http error');
+                        console.error(err);
+                        reject(err);
+                    });
+                }).end();
+            } catch (err) {
+                console.log(err);
+                reject(err);
+            }
         });
     },
     /**

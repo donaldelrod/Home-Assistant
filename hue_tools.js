@@ -22,43 +22,49 @@ module.exports = {
             ip: type.details.host,
             username: type.details.username
         };
-        var hueDevices = await this.getAllLights(modules);
-        var i = 1;
-        while(hueDevices[''+i] !== undefined) {
-            var hueDevice = hueDevices[''+i];
-            var tempDevice = {
-                deviceID: devices.length,
-                name: hueDevice.name,
-                deviceType: hueDevice.type,
-                deviceProto: 'hue',
-                deviceKind: hueDevice.productid,
-                manufacturer: hueDevice.manufacturername,
-                groups: ['lights','hue'],
-                lastState: hueDevice.state.on,
-                isToggle: true,
-                model: hueDevice.modelid,
-                harmonyControl: false,
-                hueControl: true,
-                hue: {
-                    capabilities: hueDevice.capabilities,
-                    config: hueDevice.config,
-                    uid: hueDevice.uniqueid,
-                    swversion: hueDevice.swversion,
-                    state: hueDevice.state,
-                    hueID: i
-                }
-            };
-            var inDevices = false;
-            devices.forEach(function (device) {
-                if (device.name === tempDevice.name)
-                    inDevices = true;
-            });
-            
-            if (!inDevices)
-                devices.push(tempDevice);
-            i++;
+        try {
+            var hueDevices = await this.getAllLights(modules);
+            if (hueDevices === null)
+                return;
+            var i = 1;
+            while(hueDevices[''+i] !== undefined) {
+                var hueDevice = hueDevices[''+i];
+                var tempDevice = {
+                    deviceID: devices.length,
+                    name: hueDevice.name,
+                    deviceType: hueDevice.type,
+                    deviceProto: 'hue',
+                    deviceKind: hueDevice.productid,
+                    manufacturer: hueDevice.manufacturername,
+                    groups: ['lights','hue'],
+                    lastState: hueDevice.state.on,
+                    isToggle: true,
+                    model: hueDevice.modelid,
+                    harmonyControl: false,
+                    hueControl: true,
+                    hue: {
+                        capabilities: hueDevice.capabilities,
+                        config: hueDevice.config,
+                        uid: hueDevice.uniqueid,
+                        swversion: hueDevice.swversion,
+                        state: hueDevice.state,
+                        hueID: i
+                    }
+                };
+                var inDevices = false;
+                devices.forEach(function (device) {
+                    if (device.name === tempDevice.name)
+                        inDevices = true;
+                });
+                
+                if (!inDevices)
+                    devices.push(tempDevice);
+                i++;
+            }
+            console.log('Hue lights connected successfully')
+        } catch (err) {
+            console.log(err);
         }
-        console.log('Hue lights connected successfully')
         //console.log(hueDevices);
     },
     /**
@@ -71,8 +77,13 @@ module.exports = {
         var basePath = '/api/' + modules.hue.username;
         var baseURL = baseHost + basePath;
         var url = baseURL + '/lights';
-        var lights = await api_tools.getRestHttp(url);
-        return lights;
+        try {
+            var lights = await api_tools.getRestHttp(url);
+            return lights;
+        } catch (err) {
+            console.log(err);
+            return null;
+        }
     },
     /**
      * Gets information about a specific Hue device

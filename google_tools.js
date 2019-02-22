@@ -56,7 +56,7 @@ module.exports = {
 			if (err) return console.error('Error retrieving access token', err);
 			google_oauth.setCredentials(token);
 			// Store the token to disk for later program executions
-			fs.writeFile('google_token.json', JSON.stringify(token), (err) => {
+			fs.writeFile('./config/google_token.json', JSON.stringify(token), (err) => {
 				if (err) return err;
 				console.log('Token stored to', 'google_token.json');
 			});
