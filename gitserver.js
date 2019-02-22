@@ -24,7 +24,7 @@ app.route('/git').post( (req, res) => {
             console.log('error killing process, aborting...');
             process.exit(1);
         }
-    }
+    } 
 
     shell = exec('npm run build-n-run');
 
