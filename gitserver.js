@@ -26,7 +26,7 @@ app.route('/git').post( (req, res) => {
         }
     } 
 
-    shell = exec('npm run build-n-run');
+    shell = spawn('npm',  ['run', 'build-n-run']);
 
     shell.on('exit', function (code, signal) {
         console.log(`server.js exited with code ${code} and signal ${signal}`);
@@ -35,6 +35,10 @@ app.route('/git').post( (req, res) => {
     shell.stdout.on('data', (data) => {
         console.log(`child stdout:\n${data}`);
     });
+
+    shell.on('error', function (err) {
+        console.log(err);
+    })
 
     //process.stdin.pipe(shell.stdin)
 
