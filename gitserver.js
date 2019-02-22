@@ -25,8 +25,10 @@ app.route('/git').post( (req, res) => {
             process.exit(1);
         }
     } 
-
-    shell = spawn('npm',  ['run', 'build-n-run']);
+    console.log()
+    shell = spawn('npm',  ['run', 'build-n-run'], {
+        shell: true
+    });
 
     shell.on('exit', function (code, signal) {
         console.log(`server.js exited with code ${code} and signal ${signal}`);
