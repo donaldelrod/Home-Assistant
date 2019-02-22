@@ -7,7 +7,7 @@
 
 var http = require('http');
 var https = require('https');
-var file_tools = require('./file_tools.js');
+//var file_tools = require('./file_tools.js');
 var Stream = require('stream').Transform;
 
 /**

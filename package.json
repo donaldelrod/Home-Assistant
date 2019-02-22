@@ -6,8 +6,12 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node .",
+    "build-node": "gulp build",
     "build-docs": "jsdoc -d ./compiled/docs/ .",
-    "build-ng": "cd angular && ng build --prod --output-path ../compiled/ng"
+    "build-ng": "cd angular && ng build --prod --output-path ../compiled/ng",
+    "build": "npm run build-node && npm run build-docs && npm run build-ng",
+    "run-prod": "cd compiled && node server.js",
+    "build-n-run": "npm run build && npm run run-prod"
   },
   "repository": {
     "type": "git",
@@ -20,18 +24,23 @@
   },
   "homepage": "https://github.com/donaldelrod/Home-Assistant#readme",
   "dependencies": {
-    "cors": "^2.8.5",
     "delivery-tracker": "^2.0.2",
     "express": "^4.16.4",
     "googleapis": "^34.0.0",
     "harmonyhubjs-client": "^1.1.11",
     "multer": "^1.4.1",
-    "netgear": "^3.0.8",
-    "node-schedule": "^1.3.1",
+    "netgear": "^3.3.5",
+    "node-schedule": "^1.3.2",
     "open": "0.0.5",
     "proxmox": "^0.1.0",
-    "tplink-smarthome-api": "^0.23.0",
+    "tplink-smarthome-api": "^0.23.1",
     "tuyapi": "github:codetheweb/tuyapi"
   },
-  "devDependencies": {}
+  "devDependencies": {
+    "del": "^3.0.0",
+    "gulp": "^4.0.0",
+    "gulp-strip-debug": "^3.0.0",
+    "gulp-uglify-es": "^1.0.4",
+    "gulp-util": "^3.0.8"
+  }
 }

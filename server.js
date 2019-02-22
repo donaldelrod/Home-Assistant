@@ -283,8 +283,8 @@ app.use(function(req, res, next) {
 });
 
 //lets the documentation pages be served
-app.use('/docs', express.static('compiled/docs'));
-app.use('/', express.static('compiled/ng'));
+app.use('/docs', express.static('docs'));
+app.use('/', express.static('ng'));
 
 var nonsecureServer = http.createServer(app).listen(9875);
 var secureServer = https.createServer(httpsoptions, app).listen(9876);
@@ -310,6 +310,7 @@ app.route('/api/devices/list').get((req, res) => {
     if (!checkRequest(req, res)) return;
 
     var dev_list = getSendableDevices();
+    //var dev_list = device_tools.getSendableDevices();
     //console.log(dev_list);
     res.json(dev_list);
 });
@@ -328,6 +329,7 @@ app.route('/api/devices/:deviceID/info').get(async (req, res) => {
     //     res.send(info);
     // }
     let d = getSendableDevice(index);
+    //let d = device_tools.getSendableDevice(index);
     res.json(d);
 });
 
@@ -350,6 +352,7 @@ app.route('/api/devices/:deviceID/set/:state').get( async (req, res) => {
         return;
     }
     let dd = getSendableDevice(d.deviceID);
+    // let dd = device_tools.getSendableDevice(d.deviceID);
     res.json(dd);
 });
 
