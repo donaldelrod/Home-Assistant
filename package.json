@@ -11,7 +11,9 @@
     "build-ng": "cd angular && ng build --prod --output-path ../compiled/ng",
     "build": "npm run build-node && npm run build-docs && npm run build-ng",
     "run-prod": "cd compiled && node server.js",
-    "build-n-run": "npm run build && npm run run-prod"
+    "build-n-run": "npm run build && npm run run-prod",
+    "git-pull": "git pull origin stable",
+    "rebase": "npm run git-pull && npm run build-n-run"
   },
   "repository": {
     "type": "git",

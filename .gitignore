@@ -12,3 +12,4 @@ google_credentials*
 dead_code
 compiled
 conf-backups
+gitpull.sh

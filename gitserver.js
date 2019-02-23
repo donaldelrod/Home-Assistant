@@ -13,6 +13,8 @@ console.log('Starting home-assistant gitwatcher\n\n\n');
 
 app.route('/git').post( (req, res) => {
 
+    res.status(200);
+
     console.log('git push detected...');
 
     if (shell !== null) {
@@ -26,7 +28,7 @@ app.route('/git').post( (req, res) => {
         }
     } 
     console.log()
-    shell = spawn('npm',  ['run', 'build-n-run'], {
+    shell = spawn('npm',  ['run', 'rebase'], {
         shell: true
     });
 
