@@ -1,5 +1,4 @@
 var gulp =      require('gulp');
-//var gutil =     require('gulp-util');
 var uglify =    require('gulp-uglify-es').default;
 var stripdebug = require('gulp-strip-debug');
 var del =       require('del');
@@ -9,7 +8,6 @@ var certSources = ['./https*'];
 var confSources = ['./config/*'];
 var outDir = './compiled';
 var confOutDir = './compiled/config';
-//var jsOut = 'server.min.js';
 
 gulp.task('copy-config', function() {
     return gulp.src(confSources)
