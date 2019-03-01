@@ -1,3 +1,9 @@
+/**
+ * @fileoverview Main file for the program, server.js initiates all program logic and contains all api endpoints
+ * @author Donald Elrod
+ * @version 1.0.0
+ */
+
 'use strict';
 //-------------NPM modules and Variables------------------------//
 var fs              = require('fs');
@@ -12,7 +18,7 @@ var httpsoptions         =   {
 var multer          = require('multer');
 var upload          = multer({dest: '/plexpass/'});
 var schedule        = require('node-schedule');
-var cors            = require('cors');
+//var cors            = require('cors');
 
 var platform = process.platform;
 
@@ -35,11 +41,11 @@ var harmony_tools   = require('./harmony_tools.js');
 
 //-------------Program Variables------------------------------//
 const programPath   = __dirname;
-var modulesPath     = './modules.json';
-var devicesPath     = './devices.json'; 
-var activitiesPath  = './activities.json';
-var profilesPath    = './profiles.json';
-var configPath      = './config.json';
+var modulesPath     = './config/modules.json';
+var devicesPath     = './config/devices.json'; 
+var activitiesPath  = './config/activities.json';
+var profilesPath    = './config/profiles.json';
+var configPath      = './config/config.json';
 
 var devices         = [];
 var profiles        = [];
@@ -125,8 +131,8 @@ async function processModules(moduleList) {
         else if (type.moduleName === 'hue') //deal with hue bridge setup
             hue_tools.processHue(modules, devices, type);
         else if (type.moduleName === 'opencv' && platform === 'linux') { //deal with opencv module, which will only be supported on linux/raspberry pi (for now at least)
-            modules.cv = require('opencv4nodejs');
-            modules.cv.webcam = new modules.cv.VideoCapture(parseInt(type.details.devicePort));
+            //modules.cv = require('opencv4nodejs');
+            //modules.cv.webcam = new modules.cv.VideoCapture(parseInt(type.details.devicePort));
         }
     });
 }
@@ -267,12 +273,25 @@ process.on('beforeExit', function(code) {
     console.log('safely exiting the program');
 });
 
-app.use(cors());
+//app.use(cors());
+
+//adds cors functionality
+app.use(function(req, res, next) {
+    res.header("Access-Control-Allow-Origin", "*");
+    res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+    next();
+});
+
+//lets the documentation pages be served
+app.use('/docs', express.static('docs'));
+app.use('/', express.static('ng'));
 
 var nonsecureServer = http.createServer(app).listen(9875);
 var secureServer = https.createServer(httpsoptions, app).listen(9876);
 
-//----------------Device API
+//-------------------------------------------------------API Endpoints from here on
+
+//----------------------------------------------Device API
 
 function checkRequest(req, res) {
     // if (!req.secure) {
@@ -291,6 +310,7 @@ app.route('/api/devices/list').get((req, res) => {
     if (!checkRequest(req, res)) return;
 
     var dev_list = getSendableDevices();
+    //var dev_list = device_tools.getSendableDevices();
     //console.log(dev_list);
     res.json(dev_list);
 });
@@ -309,6 +329,7 @@ app.route('/api/devices/:deviceID/info').get(async (req, res) => {
     //     res.send(info);
     // }
     let d = getSendableDevice(index);
+    //let d = device_tools.getSendableDevice(index);
     res.json(d);
 });
 
@@ -331,8 +352,20 @@ app.route('/api/devices/:deviceID/set/:state').get( async (req, res) => {
         return;
     }
     let dd = getSendableDevice(d.deviceID);
+    // let dd = device_tools.getSendableDevice(d.deviceID);
     res.json(dd);
 });
+
+//-----------------------------------------Profiles API
+
+app.route('/api/profiles').get( (req, res) => {
+    if (!checkRequest(req, res)) return;
+
+    res.json(profiles);
+});
+
+//-----------------------------------------Group API
+
 
 //controls the state of a group of devices
 app.route('/api/groups/:control').get((req, res) => {
@@ -373,6 +406,8 @@ app.route('/api/groups/:control').get((req, res) => {
     }
     res.send('success');
 });
+
+//-----------------------------------Activity API
 
 //runs the activity with the name :name
 app.route('/api/activities/name/:name').get((req, res) => {
@@ -440,7 +475,7 @@ app.route('/api/modules/google/gmail/emails').get(async (req, res) => {
     res.send(200, emails);
 });
 
-//-------------------------Netgear API
+//------------------------------------Netgear API
 
 //returns all the devices connected to the netgear router
 app.route('/api/netgearrouter/attached').get(async (req, res) => {
@@ -487,7 +522,7 @@ app.route('/api/modules/harmony/control/:device_name/:control_group/:control').g
     }
 });
 
-//------------------Plex API
+//-----------------------------------------Plex API
 
 //reacts to plex's webhooks, and will look through activities to see if any will be triggered by this webhook
 app.route('/plex/webhook').post(upload.single('thumb'), (req, res, next) => {
@@ -509,7 +544,7 @@ app.route('/plex/webhook').post(upload.single('thumb'), (req, res, next) => {
     res.sendStatus(200);
 });
 
-//--------------OpenCV API
+//---------------------------------------------OpenCV API
 
 app.route('/api/opencv/takepic').get((req, res) => {
     if (!checkRequest(req, res)) return;
@@ -553,9 +588,14 @@ app.route('/api/opencv/getpic/:filename').get((req, res) => { //idk if this work
     }
 });
 
-//--------------------Debug API
+//----------------------------------------------------Debug API
 
 app.route('/debug/modules').get( (req, res) => {
     console.log(modules);
     res.send(200, "bet thanks").end();
 });
+
+// app.route('/doc/server.js').get( (req, res) => {
+//     res.sendFile(__dirname + "\\doc\\global.html");
+//     //res.end();
+// })

@@ -1,4 +1,13 @@
+/**
+ * @fileoverview Collection of functions that deal with connecting to/controlling a server running Proxmox
+ * @author Donald Elrod
+ * @version 1.0.0
+ */
 var proxmox         = require('proxmox');
+/**
+ * Collection of functions that deal with connecting to/controlling a server running Proxmox
+ * @exports prox_tools
+ */
 module.exports = {
     /**
      * Processes the activation of the Proxmox module
@@ -13,13 +22,34 @@ module.exports = {
             console.log(err);
         }    
     },
-    getClusterStatus: function(prox) {
-        prox.getClusterStatus(function(err, response){
-            if(err) throw err;
-            else{
-              data = JSON.parse(response);
-              console.log(data);
-            }
+    getClusterStatus: async function(prox) {
+        return new Promise(function(resolve, reject) {
+            prox.getClusterStatus(function(err, response){
+                if(err) {
+                    console.log(err);
+                    reject(err);
+                }
+                else {
+                  data = JSON.parse(response);
+                  console.log(data);
+                  resolve(data);
+                }
+            });
+        });
+    },
+    getNodes: async function(prox) {
+        return new Promise(function(resolve, reject) {
+            prox.getNodes(function(err, response){
+                if(err) {
+                    console.log(err);
+                    reject(err);
+                }
+                else {
+                  data = JSON.parse(response);
+                  console.log(data);
+                  resolve(data);
+                }
+            });
         });
     }
 };

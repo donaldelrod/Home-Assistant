@@ -1,5 +1,13 @@
+/**
+ * @fileoverview Collection of functions that deal with connecting to Harmony Hubs
+ * @author Donald Elrod
+ * @version 1.0.0
+ */
 var harmony         = require('harmonyhubjs-client');
-
+/**
+ * Collection of functions that deal with connecting to Harmony Hubs
+ * @exports harmony_tools
+ */
 module.exports = {
     /**
      * Processes Harmony Hubs during program setup, this function will connect to all
@@ -76,7 +84,10 @@ module.exports = {
                         });
                     });
                     //hubInd++;
-                }).catch(err => console.log(err));
+                }).catch( (err) => {
+                    console.log(err);
+                    console.log("unable to connect to harmony hub");
+                });
                 console.log('Harmony Hub connected successfully');
             });
     },

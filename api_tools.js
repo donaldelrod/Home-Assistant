@@ -1,8 +1,19 @@
+/**
+ * @fileoverview Collection of functions that deal with API calls, mostly REST related
+ * @author Donald Elrod
+ * @version 1.0.0
+ */
+
+
 var http = require('http');
 var https = require('https');
-var file_tools = require('./file_tools.js');
+//var file_tools = require('./file_tools.js');
 var Stream = require('stream').Transform;
- 
+
+/**
+ * Collection of functions that deal with API calls, mostly REST related
+ * @exports api_tools
+ */
 module.exports = {
     /**
      * Returns a Promise for the response from an HTTPS REST API call
@@ -20,12 +31,13 @@ module.exports = {
                 res.on('end', function() {
                     resolve(dat);
                 });
-                res.on('error', function(err) {
-                    console.log('https error');
-                    console.error(err);
-                    reject(undefined)
-                })
-            }).end();
+            }).on('error', function(err) {
+                console.log('https error');
+                console.error(err);
+                reject(err)
+            });
+        }).catch(function(err) {
+            return null
         });
     },
     /**
@@ -35,7 +47,7 @@ module.exports = {
      */
     getRestHttp: function(url) {
         var dat = '';
-        return new Promise(function(resolve, reject) {
+        return new Promise( (resolve, reject) => {
             http.get(url, function(res) {
                 res.setEncoding('utf8');
                 res.on('data', function (dat_chunk) {
@@ -45,12 +57,13 @@ module.exports = {
                     var parsed = JSON.parse(dat);
                     resolve(parsed);
                 });
-                res.on('error', function(err) {
-                    console.log('http error');
-                    console.error(err);
-                    reject(undefined)
-                });
-            }).end();
+            }).on('error', function(err) {
+                //console.log('http error');
+                //console.error(err);
+                reject(err);
+            });
+        }).catch(function(err) {
+            return null
         });
     },
     /**

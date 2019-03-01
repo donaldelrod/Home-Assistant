@@ -1,8 +1,16 @@
+/**
+ * @fileoverview Collection of functions that deal with connecting to Google services
+ * @author Donald Elrod
+ * @version 1.0.0
+ */
 var fs = require('fs');
 var file_tools = require('./file_tools.js');
 const { google } = require('googleapis');
 var open = require('open');
-
+/**
+ * Collection of functions that deal with connecting to Google services
+ * @exports google_tools
+ */
 module.exports = {
 	/**
 	 * Create an OAuth2 client with the given credentials, and then execute the
@@ -48,7 +56,7 @@ module.exports = {
 			if (err) return console.error('Error retrieving access token', err);
 			google_oauth.setCredentials(token);
 			// Store the token to disk for later program executions
-			fs.writeFile('google_token.json', JSON.stringify(token), (err) => {
+			fs.writeFile('./config/google_token.json', JSON.stringify(token), (err) => {
 				if (err) return err;
 				console.log('Token stored to', 'google_token.json');
 			});

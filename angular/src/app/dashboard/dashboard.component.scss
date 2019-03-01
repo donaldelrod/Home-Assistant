@@ -21,16 +21,28 @@
 }
 
 .router-tab {
-  width: 20%;
-  height: 40%;
+  width: 22%;
+  //height: 40%;
   position: relative;
   // z-index: 1;
-  top: 10px;
+  top: 20px;
   left: 20px;
-  //background: #607d8b;
+  background: #607d8b;
   overflow-x: hidden;
   padding: 8px 0;
   float: left;
+  //color: white;
+}
+
+.profiles-tab {
+  width: 8%;
+  position: relative;
+  top: 20px;
+  left: 20px;
+  overflow-x: hidden;
+  padding: 8px 0;
+  background: #607d8b;
+  float: right;
 }
   
 // .sidenav a {

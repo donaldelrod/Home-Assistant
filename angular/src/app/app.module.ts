@@ -11,6 +11,7 @@ import { DashboardComponent } from './dashboard/dashboard.component';
 import { HttpClientModule } from '@angular/common/http';
 import { HarmonyControlsComponent } from './harmony-controls/harmony-controls.component';
 import { RouterDevicesComponent } from './router-devices/router-devices.component';
+import { ProfilesComponent } from './profiles/profiles.component';
 
 @NgModule({
   declarations: [
@@ -20,7 +21,8 @@ import { RouterDevicesComponent } from './router-devices/router-devices.componen
     DeviceMessagesComponent,
     DashboardComponent,
     HarmonyControlsComponent,
-    RouterDevicesComponent
+    RouterDevicesComponent,
+    ProfilesComponent
   ],
   imports: [
     BrowserModule,

@@ -1,16 +1,12 @@
-.router-info {
+.profiles {
     float: left;
     border-style: solid;
     border-width: 1px;
     border-style: solid;
     border-width: 1px;
     border-color: white;
+    width: 80%;
     color: black;
-}
-
-.router-device {
-    width: 40%;
-    //left: 10px;
 }
 
 [class*='col-'] {
@@ -18,7 +14,8 @@
     margin-right: 5px;
     padding-bottom: 10px;
     margin-left: 10px;
-  }
-  [class*='col-']:last-of-type {
-    padding-right: 0;
-  }
+}
+
+[class*='col-']:last-of-type {
+padding-right: 0;
+}

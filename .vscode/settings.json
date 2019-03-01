@@ -3,10 +3,12 @@
         "**/angular": true,
         "**/electron": true,
         "**/hardware": true,
-        "**/node_modules": true,
+        //"**/node_modules": true,
         "**/.hg": true,
         "**/CVS": true,
-        "**/.DS_Store": true
+        "**/.DS_Store": true,
+        "**/conf-backups": true,
+        "**/https*": true
         //"**/*.bck*": true
     }
 }

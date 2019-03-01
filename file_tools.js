@@ -1,5 +1,14 @@
+/**
+ * @fileoverview Collection of functions that deal with reading/writing files
+ * @author Donald Elrod
+ * @version 1.0.0
+ */
+
 var fs = require('fs');
- 
+/**
+ * Collection of functions that deal with reading/writing files
+ * @exports file_tools
+ */
 module.exports = {
     /**
      * Returns the children of the directory, with the absolute path attached
@@ -21,7 +30,7 @@ module.exports = {
      * @return {Promise<JSON>} promise to JSON at file location
      */
     readJSONFile: async function(file) {
-        return new Promise( function(resolve, reject) {
+        return new Promise(function(resolve, reject) {
             try {
                 fs.readFile(file, function(err, data) {
                     //console.log(file);

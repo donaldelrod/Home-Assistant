@@ -1,7 +1,17 @@
+/**
+ * @fileoverview Collection of functions that deal with connecting to devices
+ * @author Donald Elrod
+ * @version 1.0.0
+ */
+
 var hue_tools = require('./hue_tools.js');
 var harmony_tools = require('./harmony_tools.js');
 var file_tools = require('./file_tools.js');
 
+/**
+ * Collection of functions that deal with connecting to devices
+ * @exports device_tools
+ */
 module.exports = {
     // /**
     //  * Sends the formatted command to the connected Harmony Hub
