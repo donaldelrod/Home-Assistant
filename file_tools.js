@@ -30,7 +30,7 @@ module.exports = {
      * @return {Promise<JSON>} promise to JSON at file location
      */
     readJSONFile: async function(file) {
-        return new Promise( function(resolve, reject) {
+        return new Promise(function(resolve, reject) {
             try {
                 fs.readFile(file, function(err, data) {
                     //console.log(file);

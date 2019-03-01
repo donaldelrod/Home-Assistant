@@ -7,13 +7,16 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node .",
     "build-node": "gulp build",
-    "build-docs": "jsdoc -d ./compiled/docs/ .",
+    "build-server-docs": "jsdoc -d ./compiled/docs/server .",
+    "build-api-docs": "apidoc -i intermediate/ -o compiled/docs/api",
+    "build-docs": "jsdoc -d ./compiled/docs/server . && apidoc -i intermediate/ -o compiled/docs/api",
     "build-ng": "cd angular && ng build --prod --output-path ../compiled/ng",
     "build": "npm run build-node && npm run build-docs && npm run build-ng",
     "run-prod": "cd compiled && node server.js",
     "build-n-run": "npm run build && npm run run-prod",
     "git-pull": "git pull origin stable",
-    "rebase": "npm run git-pull && npm run build-n-run"
+    "rebase": "npm run git-pull && npm run build-n-run",
+    "install-deps": "npm install && cd angular && npm install && cd ../electron && npm install"
   },
   "repository": {
     "type": "git",
@@ -40,10 +43,21 @@
     "tuyapi": "github:codetheweb/tuyapi"
   },
   "devDependencies": {
+    "apidoc": "^0.17.7",
     "del": "^3.0.0",
     "gulp": "^4.0.0",
     "gulp-strip-debug": "^3.0.0",
     "gulp-uglify-es": "^1.0.4",
-    "gulp-util": "^3.0.8"
+    "gulp-util": "^3.0.8",
+    "ts": "^0.2.2",
+    "typescript-require": "^0.2.10"
+  },
+  "apidoc": {
+    "name": "Home-Assistant Node API Documentation",
+    "version": "0.0.1",
+    "description": "All the backend REST API routes for Home Assistant",
+    "title": "Home-Assistant API",
+    "url": "http://donaldelrod.ddns.net:9875",
+    "sampleUrl": "http://donaldelrod.ddns.net:9875"
   }
 }

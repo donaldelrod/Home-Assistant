@@ -24,8 +24,11 @@ module.exports = {
         };
         try {
             var hueDevices = await this.getAllLights(modules);
-            if (hueDevices === null)
+            if (hueDevices === null) {
+                console.log('Home-Assistant was unable to connect to Hue Bridge at ' + type.details.host + ':80');
+                modules.hue.unavailable = true;
                 return;
+            }
             var i = 1;
             while(hueDevices[''+i] !== undefined) {
                 var hueDevice = hueDevices[''+i];
@@ -73,17 +76,16 @@ module.exports = {
      * @returns {Object} Object containing all connected Hue devices
      */
     getAllLights: async function(modules) {
+        if (modules.hue.unavailable)
+            return null;
+
         var baseHost = 'http://' + modules.hue.ip;
         var basePath = '/api/' + modules.hue.username;
         var baseURL = baseHost + basePath;
         var url = baseURL + '/lights';
-        try {
-            var lights = await api_tools.getRestHttp(url);
-            return lights;
-        } catch (err) {
-            console.log(err);
-            return null;
-        }
+
+        var lights = await api_tools.getRestHttp(url);
+        return lights;
     },
     /**
      * Gets information about a specific Hue device
@@ -92,6 +94,9 @@ module.exports = {
      * @returns {Object} returns the specified light as a JSON object
      */
     getLight: async function (modules, lightID) {
+        if (modules.hue.unavailable)
+            return null;
+
         var baseHost = 'http://' + modules.hue.ip;
         var basePath = '/api/' + modules.hue.username;
         var baseURL = baseHost + basePath;
@@ -106,6 +111,9 @@ module.exports = {
      * @param {boolean} state the state to set the light to
      */
     setLightState: async function (modules, lightID, state) {
+        if (modules.hue.unavailable)
+            return null;
+            
         var baseHost = modules.hue.ip;
         var basePath = '/api/' + modules.hue.username;
         //var baseURL = baseHost + basePath;
