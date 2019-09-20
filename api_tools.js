@@ -63,7 +63,7 @@ module.exports = {
                 reject(err);
             });
         }).catch(function(err) {
-            return null
+            return null;
         });
     },
     /**

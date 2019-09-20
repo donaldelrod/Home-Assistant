@@ -4,6 +4,7 @@
  * @version 1.0.0
  */
 var harmony         = require('harmonyhubjs-client');
+var HarmonyDevice   = require('./Devices/HarmonyDevice');
 /**
  * Collection of functions that deal with connecting to Harmony Hubs
  * @exports harmony_tools
@@ -20,7 +21,7 @@ module.exports = {
         modules.harmony = {};
             modules.harmony.devices = [];
             modules.harmony.hubs = [];
-            type.details.forEach(/*function*/ (harmonyHost, hi) => {
+            type.details.forEach( (harmonyHost, hi) => {
                 var hubInd = hi;
                 harmony(harmonyHost.host).then(function(hub) {
                     hub.hubName = harmonyHost.hubName;
@@ -36,12 +37,12 @@ module.exports = {
                             tempHarmonyDevice = {
                                 name: rawDevice.label,
                                 deviceID: devices.length,
-                                deviceProto: 'harmony',
-                                deviceKind: 'harmony-'+rawDevice.type,
+                                deviceProto: 'HarmonyDevice',
+                                deviceKind: 'Harmony - ' + rawDevice.type,
                                 deviceType: rawDevice.type,
                                 ip: "",
                                 pollable: false,
-                                groups: [],
+                                groups: ["harmony"],
                                 controlPort: rawDevice.ControlPort,
                                 manufacturer: rawDevice.manufacturer,
                                 harmonyProfile: rawDevice.deviceProfileUri,
@@ -76,8 +77,11 @@ module.exports = {
                             //only push to devices if the device is new, so harmony devices can be 
                             //stored and further customized in the program
                             //devices are saved to devices.json after being added once
-                            if (!inDevices)
-                                devices.push(tempHarmonyDevice);
+                            if (!inDevices) {
+                                let newHarmonyDevice = new HarmonyDevice(tempHarmonyDevice, hub);
+                                devices.push(newHarmonyDevice);
+                            }
+                                
                         });
                         harmonyDevices.forEach(function (harmDev) {
                             modules.harmony.devices.push(harmDev);

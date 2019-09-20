@@ -26,9 +26,9 @@ module.exports = {
     // },
     /**
      * Sets the state of supported devices/protocols. Supported devices currently are:
-     * - tplink
-     * - tuyapi
-     * - harmony devices (only sets/toggles power)
+     * - TPLink
+     * - Tuyapi
+     * - Harmony devices (only sets/toggles power)
      * @param {Object} device device object to set the state of
      * @param {boolean} state true for on, false for off, undefined for toggle
      * @param {Object} modules modules object from server.js
@@ -36,23 +36,8 @@ module.exports = {
      */
     setDeviceState: async function(device, state, modules) {
         var toggle = state === undefined;
-        var power_state;
         if (toggle) {
-            if (device.deviceProto === 'tplink') {
-                power_state = !device.obj.relayState
-                device.obj.setPowerState(power_state);
-                device.lastState = power_state;
-            } else if (device.deviceProto === 'tuyapi') {
-                device.obj.get().then(status => {
-                    power_state = !status;
-                    device.obj.set({set: !status}).then(result => {
-                        if (result)
-                            console.log('status change succeeded');
-                        else console.log('status change failed');
-                        device.lastState = !status;
-                    }).catch(err => console.log('could not change tuyapi device state: ' + err));
-                }).catch(err => console.log(err));
-            } else if (device.deviceProto === 'harmony') {
+            if (device.deviceProto === 'harmony') {
 
                 var powerControl = this.getHarmonyControl(modules, device.name, 'Power', 'PowerToggle');
 
@@ -64,7 +49,7 @@ module.exports = {
                     return undefined;
                 }
             } //else if (device.deviceProto === 'hue') {
-
+            //else await device
             //}
             return device;
         }
@@ -259,23 +244,7 @@ module.exports = {
             }
         });
     },
-    /**
-     * Queries supported devices for their power state
-     * Currently supported devices are:
-     * - tplink
-     * - tuyapi
-     * @param {Object} device Individual device from the array devices in server.js
-     * @returns {Promise<boolean>} resolves to the status of the device
-     */
-    getDeviceState: function(device) {
-        if (device.deviceProto === 'tplink') {
-            return device.obj.relayState;
-        } else if (device.deviceProto === 'tuyapi') {
-            return device.obj.get().then( (status) => {
-                return status;
-            }).catch((reason) => {console.log(reason); return undefined});
-        }
-    },
+
     /**
      * Creates an example json file for users to fill out with
      * Device data

@@ -14,6 +14,7 @@ var Device = (function () {
         this.lastState = lastState;
         this.isToggle = isTogg;
         this.lastStateString = lastStateStr;
+        this.unavailable = true;
     }
     Device.prototype.getSendableDevice = function (d) {
         return new Device(d.deviceID, d.name, d.deviceType, d.deviceKind, d.deviceProto, d.groups, d.lastState, d.isToggle, d.lastState ? 'on' : 'off');
@@ -22,7 +23,18 @@ var Device = (function () {
     Device.prototype.setState = function (newState) {
         this.lastState = newState;
         this.lastStateString = this.lastState ? 'on' : 'off';
-        return this.lastState;
+        return this;
+    };
+    ;
+    Device.prototype.logEvent = function (eventType, event) {
+        var log = {
+            time: new Date(),
+            deviceID: this.deviceID,
+            deviceName: this.name,
+            eventType: eventType,
+            event: event
+        };
+        console.log(log);
     };
     return Device;
 }());

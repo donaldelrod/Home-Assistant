@@ -6,7 +6,7 @@
 
 'use strict';
 //-------------NPM modules and Variables------------------------//
-var tsr             = require('typescript-require');
+//var tsr             = require('typescript-require');
 var os              = require('os');
 var fs              = require('fs');
 var http            = require('http');
@@ -20,15 +20,9 @@ var httpsoptions         =   {
 var multer          = require('multer');
 var upload          = multer({dest: '/plexpass/'});
 var schedule        = require('node-schedule');
-//var cors            = require('cors');
+var cors            = require('cors');
 
 var platform = process.platform;
-
-
-//-------------API imports and Variables------------------------//
-const { Client }    = require('tplink-smarthome-api');
-const TPClient      = new Client();
-const TuyAPI        = require('tuyapi');
 
 
 //-------------personal modules--------------------------------//
@@ -41,9 +35,7 @@ var activity_tools  = require('./activity_tools.js');
 var netgear_tools   = require('./netgear_tools.js');
 var harmony_tools   = require('./harmony_tools.js');
 
-var Device          = require('./Device.ts').Device;
-var TPLinkDevice    = require('./TPLinkDevice.ts').TPLinkDevice;
-//var HarmonyDevice   = require('./HarmonyDevice.ts');
+const Device        = require('./Devices/Device.js');
 
 //-------------Program Variables------------------------------//
 const programPath   = __dirname;
@@ -53,14 +45,16 @@ var activitiesPath  = './config/activities.json';
 var profilesPath    = './config/profiles.json';
 var configPath      = './config/config.json';
 
-var devices         = [];
-let tsdevices       = [];
-var profiles        = [];
-var activities      = [];
-var config          = {};
-var modules         = {};
-var scheduledFunctions = [];
+let globals         = require('./globals.js');
 
+let devices         = globals.devices;//[];
+let profiles        = globals.profiles;//[];
+let activities      = globals.activities;//[];
+let config          = globals.config;//{};
+let modules         = globals.modules;//{};
+let scheduledFunctions = globals.scheduledFunctions;//[];
+let DeviceModules   = globals.DeviceModules;
+let PluginModules   = globals.PluginModules;
 
 /**
  * Processes all activities that can be run by the program, and schedules programs with timing triggers
@@ -90,44 +84,48 @@ function processActivities() {
  * @function processDevices
  * @param {Array<Object>} deviceList list of devices loaded from file
  */
-function processDevices(deviceList) {
+async function processDevices(deviceConfig) {
     console.log('Connecting to devices...');
-    //var ind = 0;
-    deviceList.forEach(function(device) {
+
+    // here I load the device modules so that we can abstract away all of the implementation 
+    // differences of different devices, as well as dynamically load device modules
+    await deviceConfig.deviceModules.forEach(async function(deviceModule) {
+        DeviceModules[deviceModule.deviceType] = require(deviceModule.file);
+        if (DeviceModules[deviceModule.deviceType].setupPlugin !== undefined)
+            DeviceModules[deviceModule.deviceType].setupPlugin(deviceModule.details, devices);
+    });
+
+    // reserve spots for the devices loaded in the devices.json file
+    devices.length = deviceConfig.deviceList.length;
+
+    // create the proper Device subclass for the devices saved in devices.json
+    await deviceConfig.deviceList.forEach(async function(device) {
         var tempDevice;
-        let tsTempDevice;
         try {
-            tempDevice = device;
-            tsTempDevice = new Device(
-                tempDevice.deviceID,
-                tempDevice.name,
-                tempDevice.deviceType,
-                tempDevice.deviceKind,
-                tempDevice.proto,
-                tempDevice.groups,
-                tempDevice.lastState,
-                tempDevice.isToggle,
-                tempDevice.lastStateString
+            // create the base Device object
+            tempDevice = new Device(
+                device.deviceID,
+                device.name,
+                device.deviceType,
+                device.deviceKind,
+                device.deviceProto,
+                device.groups,
+                false,
+                device.isToggle,
+                'off',
+                device.ip
             );
+            
+            // here any additional details for device setup are added to the Device object
+            //tempDevice.details = device.details;
 
-//changed this from devices to tsDevices:Device[]
-
-            // if (device.deviceKind === 'tplink-plug') {
-            //     tempDevice.obj = TPClient.getPlug({host: device.ip});
-            // } else if (device.deviceKind === 'tplink-bulb') {
-            //     tempDevice.obj = TPClient.getBulb({host: device.ip});
-            // } else if (device.deviceProto === 'harmony') {
-            //     //don't think I need to do anything here but saving this space in case I do
-            if (device.proto === 'tplink') {
-                tsTempDevice = new TPLinkDevice({host: device.ip});
-            } else if (device.deviceProto === 'tuyapi') {
-                tempDevice.obj = new TuyAPI({
-                    id: device.id,
-                    key: device.key,
-                    ip: device.ip
-                });
-            }
-            devices.push(tempDevice);
+            // this creates an instantiation of a device module
+            let dev = DeviceModules[device.deviceProto];
+            tempDevice = new dev(tempDevice, device.details);
+            // call the setup function for the device: passing the devices array so controllers can add their devices
+            await tempDevice.setup(devices);
+            // inserts the device into the reserved spot in the devices array
+            devices[device.deviceID] = tempDevice;
             console.log(tempDevice.deviceKind + ' ' + tempDevice.name + ' conected successfully');
         } catch (err) {
             console.log(err);
@@ -143,16 +141,18 @@ function processDevices(deviceList) {
 async function processModules(moduleList) {
     console.log('Connecting to modules...');
     await moduleList.forEach(async function(type) {
-        if (type.moduleName == 'proxmox') //deal with proxmox setup
+        if (type.moduleName === 'proxmox') //deal with proxmox setup
             prox_tools.processProxmox(modules, type);          
-        else if (type.moduleName == 'google') //deal with google account setup
+        else if (type.moduleName === 'google') //deal with google account setup
             google_tools.processGoogleAccount(modules, type);
-        else if (type.moduleName == 'netgear') //deal with netger router setup
+        else if (type.moduleName === 'netgear') //deal with netger router setup
             netgear_tools.processNetgearRouter(modules, type);
-        else if (type.moduleName == 'harmony') //deal with harmony hub setup
+        else if (type.moduleName === 'harmony') //deal with harmony hub setup
             harmony_tools.processHarmonyHubs(modules, devices, type);
-        else if (type.moduleName === 'hue') //deal with hue bridge setup
-            hue_tools.processHue(modules, devices, type);
+        // else if (type.moduleName === 'hue') { //deal with hue bridge setup
+        //     //hue_tools.processHue(modules, devices, type);
+            
+        // }
         else if (type.moduleName === 'opencv' && platform === 'linux') { //deal with opencv module, which will only be supported on linux/raspberry pi (for now at least)
             //modules.cv = require('opencv4nodejs');
             //modules.cv.webcam = new modules.cv.VideoCapture(parseInt(type.details.devicePort));
@@ -169,7 +169,7 @@ function pollDevices() {
     console.log('polling devices');
     devices.forEach( (eachDevice) => {
         if (eachDevice.pollable) {
-            var state = device_tools.getDeviceState(eachDevice);
+            var state = eachDevice.getDeviceState();
             Promise.resolve(state).then((currentState) => {
                 eachDevice.lastState = currentState;
             }).catch(err => console.log(err));
@@ -178,60 +178,24 @@ function pollDevices() {
 }
 
 /**
- * Converts the device in the device list in memory to HTTP sendable devices
- * @function getSendableDevice
- * @param {number} id the index of the device in the array of devices in memory
- * @returns {JSON} the specified device in a sendable format
- */
-function getSendableDevice(id) {
-    var dev_list = devices.map((d, ind) => {
-        var sendableDevice = {
-            deviceID: d.deviceID,
-            name: d.name,
-            deviceType: d.deviceType,
-            deviceKind: d.deviceKind,
-            proto: d.deviceProto,
-            groups: d.groups,
-            lastState: d.lastState,
-            isToggle: true,
-            lastStateString: d.lastState ? 'on' : 'off',
-            harmonyControls: false
-        };
-        if (d.deviceProto === 'harmony') {
-            sendableDevice.harmony = d.controlGroups;
-            sendableDevice.harmonyControls = true;
-        }
-        return sendableDevice;
-    });
-    return dev_list[id];
-}
-
-/**
  * Converts the device list in memory to HTTP sendable devices
  * @function getSendableDevices
  * @returns {JSON} the device list in a sendable format
  */
 function getSendableDevices() {
-    var dev_list = devices.map((d, ind) => { 
-        var sendableDevice = {
-            deviceID: ind,
-            name: d.name,
-            deviceType: d.deviceType,
-            deviceKind: d.deviceKind,
-            proto: d.deviceProto,
-            groups: d.groups,
-            lastState: d.lastState,
-            isToggle: true,
-            lastStateString: d.lastState ? 'on' : 'off',
-            harmonyControls: false
-        };
-        if (d.deviceProto === 'harmony') {
-            sendableDevice.harmony = d.controlGroups;
-            sendableDevice.harmonyControls = true;
-        }
-        return sendableDevice;
+    var dev_list = devices.map((d) => { 
+        return d.getSendableDevice()
+    }).filter((d) => {
+        if (d !== undefined) return d;
     });
-    return dev_list;
+//might need to change front end here for differences in sendable devices now
+    //     if (d.deviceProto === 'harmony') {
+    //         sendableDevice.harmony = d.controlGroups;
+    //         sendableDevice.harmonyControls = true;
+    //     }
+    //     return sendableDevice;
+    // });
+    return dev_list.sort(function(a, b) {return a.deviceID - b.deviceID});
 }
 
 /**
@@ -266,10 +230,14 @@ async function setup() {
     profiles        = await file_tools.readJSONFile(profilesPath);
     modules.list    = await file_tools.readJSONFile(modulesPath);
     activities      = await file_tools.readJSONFile(activitiesPath);
-    var deviceList  = await file_tools.readJSONFile(devicesPath);
+    let deviceList = await file_tools.readJSONFile(devicesPath);
+    //var deviceList  = deviceConfig.deviceList;
 
+    await processDevices({
+        deviceModules: config.deviceModules, 
+        deviceList: deviceList
+    });
     
-    await processDevices(deviceList);
     await processModules(modules.list);
     await activity_tools.processActivities(activities, scheduledFunctions, schedule);
     //processActivities();
@@ -281,9 +249,9 @@ async function setup() {
     //schedules the function pollDevices() to execute at intervals specified in the config file
     setInterval(pollDevices, parseInt(config.devicePollInterval)); 
 
-    checkWhoIsHome();
+    //checkWhoIsHome();
     //schedules the function checkWhoIsHome() to execute at intervals specified in the config file
-    setInterval(checkWhoIsHome, parseInt(config.whoIsHomeInterval));
+    //setInterval(checkWhoIsHome, parseInt(config.whoIsHomeInterval));
 
 }
 
@@ -306,7 +274,7 @@ process.on('beforeExit', function(code) {
     console.log('safely exiting the program');
 });
 
-//app.use(cors());
+app.use(cors());
 
 //adds cors functionality
 app.use(function(req, res, next) {
@@ -316,7 +284,7 @@ app.use(function(req, res, next) {
 });
 
 //lets the documentation pages be served
-app.use('/', express.static('ng'));
+app.use('/', express.static('compiled/ng'));
 app.use('/docs/server', express.static('docs/server'));
 app.use('/docs/api', express.static('docs/api'));
 
@@ -389,7 +357,6 @@ app.route('/api/devices/list').get((req, res) => {
     if (!checkRequest(req, res)) return;
 
     var dev_list = getSendableDevices();
-    //var dev_list = device_tools.getSendableDevices();
     //console.log(dev_list);
     res.json(dev_list);
 });
@@ -410,13 +377,12 @@ app.route('/api/devices/:deviceID/info').get(async (req, res) => {
     if (!checkRequest(req, res)) return;
 
     var index = parseInt(req.params.deviceID);
-    let d = getSendableDevice(index);
-    //let d = device_tools.getSendableDevice(index);
+    let d = devices[index];
     if (d === undefined) {
         res.status(404).json({error: 'DeviceNotExist'});
         return;
     }
-    res.json(d);
+    res.json(d.getSendableDevice());
 });
 
 
@@ -445,15 +411,13 @@ app.route('/api/devices/:deviceID/set/:state').get( async (req, res) => {
         return;
     }
     var state = req.params.state === '1' ? true : (req.params.state === '0' ? false : undefined);
-    
-    let d = await device_tools.setDeviceState(device, state, modules);
-    if (d === undefined) {
+    device = await device.setState(state);
+    //let d = await device_tools.setDeviceState(device, state, modules);
+    if (device === undefined) {
         res.status(500).json({error: 'DeviceNotResponsive'});
         return;
     }
-    let dd = getSendableDevice(d.deviceID);
-    // let dd = device_tools.getSendableDevice(d.deviceID);
-    res.json(dd);
+    res.json(device);
 });
 
 //-----------------------------------------Profiles API
@@ -667,13 +631,13 @@ app.route('/api/metrics/me/all').get((req, res) => {
         usedmem: umem
     }
 
-    var cpus = os.cpus();
-    var ni = os.networkInterfaces();
-    var load = os.loadavg();
-    var end = os.endianness();
-    var platform = os.platform();
-    var arch = os.arch();
-    var uptime = os.uptime();
+    var cpus        = os.cpus();
+    var ni          = os.networkInterfaces();
+    var load        = os.loadavg();
+    var end         = os.endianness();
+    var platform    = os.platform();
+    var arch        = os.arch();
+    var uptime      = os.uptime();
 
     var stats = {
         platform: platform,
