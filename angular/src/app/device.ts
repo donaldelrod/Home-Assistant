@@ -10,5 +10,7 @@ export class Device {
     lastStateString: string;
     ip: string;
     unavailable: boolean;
+    harmony?: any;
+    harmonyControl?: any;
 }
     

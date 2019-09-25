@@ -40,7 +40,6 @@ class HueDevice extends Device {
     
     /**
      * Returns HueDevice object expected in the frontend
-     * @function getSendableDevice
      * @returns {Object} sendable representation of HueDevice object
      */
     getSendableDevice() {
@@ -64,7 +63,7 @@ class HueDevice extends Device {
 
     /**
      * Sets the state of this Hue device
-     * @function setState
+     * @async
      * @param {boolean} newState the state to set the light to
      * @returns {Object} sendable representation of HueDevice object
      */
@@ -74,12 +73,12 @@ class HueDevice extends Device {
         this.lastState = newState;
         this.lastStateString = this.lastState ? 'on' : 'off';
         
-        return this.getSendableDevice();
+        return this;
     };
 
     /**
      * Toggles the state of the Hue device
-     * @function toggleState
+     * @async
      * @returns {Object} sendable representation of HueDevice object
      */
     async toggleState() {
@@ -93,7 +92,6 @@ class HueDevice extends Device {
 
     /**
      * Returns the current state of the Hue light
-     * @function getDeviceState
      * @returns {boolean} the last state of all known Hue lights attached
      */
     getDeviceState() {
@@ -102,7 +100,6 @@ class HueDevice extends Device {
 
     /**
      * Logs events, such as changes in state
-     * @function logEvent
      * @param {string} eventType a string representing the type of Event
      * @param {Object} event a collection of event information, will eventually be standardized
      */

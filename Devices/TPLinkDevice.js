@@ -15,7 +15,7 @@ const TPClient      = new Client();
  */
 class TPLinkDevice extends Device {
 
-    static get [Symbol.species]() { return Device; }
+    //static get [Symbol.species]() { return Device; }
 
     // tplink;         //:        any;
     // sysinfo;        //:        any;
@@ -71,7 +71,7 @@ class TPLinkDevice extends Device {
 
     /**
      * Sets up the device by connecting to the devices and setting up power polling
-     * @function setup
+     * @async
      */
     async setup() {
         //get device state every 5 seconds
@@ -107,7 +107,7 @@ class TPLinkDevice extends Device {
 
     /**
      * Sets the state of this TPLink device
-     * @function setState
+     * @async
      * @param {boolean} newState the state to set the device to
      * @returns {Object} sendable representation of TPLinkDevice object
      */
@@ -129,7 +129,7 @@ class TPLinkDevice extends Device {
 
     /**
      * Toggles the state of the TPLink device
-     * @function toggleState
+     * @async
      * @returns {Object} sendable representation of TPLinkDevice object
      */
     async toggleState() {
@@ -146,7 +146,6 @@ class TPLinkDevice extends Device {
 
     /**
      * Returns the current state of the TPLink device
-     * @function getDeviceState
      * @returns {boolean} the last state of the TPLink device
      */
     getDeviceState() {
@@ -154,8 +153,7 @@ class TPLinkDevice extends Device {
     }
 
     /**
-     * Returns TPLinkDevice object expected in the frontend
-     * @function getSendableDevice
+     * Returns a TPLinkDevice as an object expected in the frontend
      * @returns {Object} sendable representation of TPLinkDevice object
      */
     getSendableDevice() {
@@ -185,7 +183,6 @@ class TPLinkDevice extends Device {
 
     /**
      * Logs events, such as changes in state
-     * @function logEvent
      * @param {string} eventType a string representing the type of Event
      * @param {Object} event a collection of event information, will eventually be standardized
      */

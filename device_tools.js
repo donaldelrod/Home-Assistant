@@ -35,41 +35,8 @@ module.exports = {
      * @returns {Device} the new state of the device
      */
     setDeviceState: async function(device, state, modules) {
-        var toggle = state === undefined;
-        if (toggle) {
-            if (device.deviceProto === 'harmony') {
 
-                var powerControl = this.getHarmonyControl(modules, device.name, 'Power', 'PowerToggle');
-
-                if (powerControl !== undefined) {
-                    harmony_tools.sendHarmonyCommand(modules, powerControl.formattedCommand, device.belongsToHub);
-                    device.lastState = device.lastState === undefined ? undefined : !device.lastState;
-                } else {
-                    console.log('Harmony control not found: Power PowerToggle');
-                    return undefined;
-                }
-            } //else if (device.deviceProto === 'hue') {
-            //else await device
-            //}
-            return device;
-        }
-        //if we are not toggling the power and instead setting the state directly
-        if (device.deviceProto === 'tplink') {
-            device.obj.setPowerState(state);
-            power_state = state;
-            device.lastState = state;
-        } else if (device.deviceProto === 'tuyapi') {
-            await device.obj.set({set: state}).then(result => {
-                power_state = state;
-                if (result) {
-                    console.log('successfully set state to ' + state);
-                    device.lastState = state;
-                }
-                else console.log('failed to set state to true');
-            }).catch(err => console.log(err));
-            
-        }
-        else if (device.deviceProto === 'harmony') {
+        if (device.deviceProto === 'harmony') {
             var control = state === true ? 'PowerOn' : 'PowerOff';
             var powerControl = this.getHarmonyControl(modules, device.name, 'Power', control);
 
@@ -89,30 +56,30 @@ module.exports = {
         }
         return device;
     },
-    /**
-     * Finds the specific Harmony control for the given input
-     * @param {Object} modules modules object from server.js
-     * @param {string} deviceName the name of the device to get the controls for
-     * @param {string} controlGroup the control group of the control, i.e. 'Power'
-     * @param {string} control the specific control, i.e. 'VolumeUp'
-     * @returns {Object} the object for the specified control
-     */
-    getHarmonyControl: function(modules, deviceName, controlGroup, control) {
-        var selectedDevice = modules.harmony.devices.find((eachDevice) => {
-            return eachDevice.name === deviceName;
-        });
-        if (selectedDevice === undefined)
-            return undefined;
-        var selectedCG = selectedDevice.controlGroups.find((cg) => {
-                return cg.name === controlGroup;
-        });
-        if (selectedCG === undefined)
-            return undefined;
-        var selectedControl = selectedCG.controls.find((thisControl) => {
-            return thisControl.name === control;
-        });
-        return selectedControl;
-    },
+    // /**
+    //  * Finds the specific Harmony control for the given input
+    //  * @param {Object} modules modules object from server.js
+    //  * @param {string} deviceName the name of the device to get the controls for
+    //  * @param {string} controlGroup the control group of the control, i.e. 'Power'
+    //  * @param {string} control the specific control, i.e. 'VolumeUp'
+    //  * @returns {Object} the object for the specified control
+    //  */
+    // getHarmonyControl: function(modules, deviceName, controlGroup, control) {
+    //     var selectedDevice = modules.harmony.devices.find((eachDevice) => {
+    //         return eachDevice.name === deviceName;
+    //     });
+    //     if (selectedDevice === undefined)
+    //         return undefined;
+    //     var selectedCG = selectedDevice.controlGroups.find((cg) => {
+    //             return cg.name === controlGroup;
+    //     });
+    //     if (selectedCG === undefined)
+    //         return undefined;
+    //     var selectedControl = selectedCG.controls.find((thisControl) => {
+    //         return thisControl.name === control;
+    //     });
+    //     return selectedControl;
+    // },
     /**
      * Converts the devices object to a .json friendly format
      * @param {Object} devices devices from server.js

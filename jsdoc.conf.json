@@ -1,0 +1,14 @@
+{
+    "source": {
+        "include": [
+            "./package.json",
+            "./server.js",
+            "./file_tools.js",
+            "./api_tools.js",
+            "./prox_tools.js",
+            "./google_tools.js",
+            "./netgear_tools.js",
+            "./Devices/" ],
+        "includePattern": ".+\\.js$"
+    }
+}

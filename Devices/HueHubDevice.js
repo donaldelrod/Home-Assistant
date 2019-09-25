@@ -38,7 +38,6 @@ class HueHubDevice extends Device {
     
     /**
      * Returns HueHubDevice object expected in the frontend
-     * @function getSendableDevice
      * @returns {Object} sendable representation of HueHubDevice object
      */
     getSendableDevice() {
@@ -57,7 +56,7 @@ class HueHubDevice extends Device {
 
     /**
      * Sets the state of all Hue devices connected
-     * @function setState
+     * @async
      * @param {boolean} newState the state to set the lights to
      * @returns {Object} sendable representation of HueHubDevice object
      */
@@ -70,12 +69,12 @@ class HueHubDevice extends Device {
         this.lastState = newState;
         this.lastStateString = this.lastState ? 'on' : 'off';
         
-        return this.getSendableDevice();
+        return this;
     };
 
     /**
      * Toggles the state of all Hue devices connected
-     * @function toggleState
+     * @async
      * @returns {Object} sendable representation of HueHubDevice object
      */
     async toggleState() {
@@ -87,13 +86,12 @@ class HueHubDevice extends Device {
         this.lastState = !this.lastState;
         this.lastStateString = this.lastState ? 'on' : 'off';
 
-        return this.getSendableDevice();
+        return this;
     }
 
     /**
      * Returns the last state of all known Hue lights attached.
      * This does not poll the Hue lights
-     * @function getDeviceState
      * @returns {boolean} the last state of all known Hue lights attached
      */
     getDeviceState() {
@@ -102,7 +100,6 @@ class HueHubDevice extends Device {
 
     /**
      * Logs events, such as changes in state
-     * @function logEvent
      * @param {string} eventType a string representing the type of Event
      * @param {Object} event a collection of event information, will eventually be standardized
      */
@@ -120,7 +117,7 @@ class HueHubDevice extends Device {
 
     /**
     * Processes Hue lighting by connecting to the bridge and downloading connected device list
-    * @function setup
+    * @async
     * @param {Object[]} devices devices array from the main script, will add harmony devices to the array
     */
     async setup(devices) {
@@ -174,7 +171,7 @@ class HueHubDevice extends Device {
 
        /**
      * Retrieves a list of all Hue devices connected to the Hue Bridge
-     * @function getAllLights
+     * @async
      * @param {Object} modules the modules object from server.js, contains all objects/details for modules to work properly
      * @returns {Object} Object containing all connected Hue devices
      */
@@ -192,7 +189,7 @@ class HueHubDevice extends Device {
 
     /**
      * Gets information about a specific Hue device
-     * @function getLight
+     * @async
      * @param {number} lightID the id of a Hue light
      * @returns {Object} returns the specified light as a JSON object
      */
@@ -209,7 +206,7 @@ class HueHubDevice extends Device {
 
     /**
      * Sets the on/off state of a Hue light
-     * @function setLightState
+     * @async
      * @param {number} lightID the Hue ID of a Hue light
      * @param {boolean} state the state to set the light to
      */

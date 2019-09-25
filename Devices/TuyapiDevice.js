@@ -7,9 +7,12 @@
 const Device        = require('./Device');
 const TuyAPI        = require('tuyapi');
 
+/**
+ * Device module allowing HA to control Tuyapi Devices
+ */
 class TuyapiDevice extends Device {
 
-    static get [Symbol.species]() { return Device; }
+    //static get [Symbol.species]() { return Device; }
 
 
     // tplink;         //:        any;
@@ -47,10 +50,20 @@ class TuyapiDevice extends Device {
         });
     }
 
+    /**
+     * Performs setup functions for the device
+     * @async
+     */
     async setup() {
     
     }
 
+    /**
+     * Sets the state of the TuyapiDevice
+     * @async
+     * @param {boolean} newState state to set the device to
+     * @returns {TuyapiDevice} returns this device after changing the state
+     */
     async setState(newState) {
         
         this.lastState = newState;
@@ -61,10 +74,18 @@ class TuyapiDevice extends Device {
         return this;
     }
 
+    /**
+     * Gets the current state of the TuyapiDevice
+     * @returns {boolean} the current state of the device
+     */
     getDeviceState() {
         return this.lastState;
     }
 
+    /**
+     * Returns TuyapiDevice object expected in the frontend
+     * @returns {Object} sendable representation of the Device object
+     */
     getSendableDevice() {
         super.getSendableDevice();
     }
