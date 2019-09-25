@@ -6,7 +6,16 @@ var fs          = require('fs');
 var Readable    = require('stream').Readable;
 var exec        = require('child_process').exec;
 
-var jsSources   = ['./*.js'];
+var server_sources   = [
+                    './server.js',
+                    './file_tools.js',
+                    './api_tools.js',
+                    './prox_tools.js',
+                    './google_tools.js',
+                    './netgear_tools.js'
+                    ];
+//['./*.js'];
+var device_modules   = './Devices/*.js';
 var certSources = ['./https*'];
 var confSources = ['./config/*'];
 var outDir      = './compiled';
@@ -22,12 +31,19 @@ gulp.task('copy-certs', function() {
      .pipe(gulp.dest(outDir));
 })
 
-gulp.task('js', function() {
-    return gulp.src(jsSources)
+gulp.task('minify-server', function() {
+    return gulp.src(server_sources)
      .pipe(stripdebug())
      .pipe(uglify())
      .pipe(gulp.dest(outDir));
 });
+
+gulp.task('minify-device-modules', function() {
+    return gulp.src(device_modules)
+     .pipe(stripdebug())
+     .pipe(uglify())
+     .pipe(gulp.dest(outDir + '/Devices'));
+})
 
 gulp.task('clean', function() {
     return del(['./compiled/*', './intermediate']);
@@ -49,16 +65,33 @@ gulp.task('remove-jsdoc-comments', function() {
     return s;
 });
 
-gulp.task('build-docs', function(cb) {
-    exec('npm run build-docs', function (err, stdout, stderr) {
-        //console.log(stdout);
+// build the docs for the server and main program files
+gulp.task('build-server-docs', function(cb) {
+    exec('jsdoc -d ' + outDir + '/docs/server -c jsdoc.conf.json', function(err, stdout, stderr) {
         console.log(stderr);
         cb(err);
-      });
+    })
 });
 
+// build the docs for the device modules
+gulp.task('build-device-module-docs', function(cb) {
+    exec('jsdoc -d ' + outDir + '/docs/server/ ./Devices', function(err, stdout, stderr) {
+        console.log(stderr);
+        cb(err);
+    })
+});
+
+gulp.task('build-docs', 
+    gulp.series('build-server-docs')
+    // exec('npm run build-docs', function (err, stdout, stderr) {
+    //     //console.log(stdout);
+    //     console.log(stderr);
+    //     cb(err);
+    //   });
+);
+
 gulp.task('build-ng', function(cb) {
-    exec('npm run build-ng', function (err, stdout, stderr) {
+    exec('cd angular && ng build --prod --output-path ../compiled/ng', function (err, stdout, stderr) {
         //console.log(stdout);
         console.log(stderr);
         cb(err);
@@ -67,8 +100,9 @@ gulp.task('build-ng', function(cb) {
 
 gulp.task('build', 
     gulp.series('clean', 
-        gulp.parallel('remove-jsdoc-comments', 'js'), 
-        gulp.parallel('build-docs', 'copy-config', 'copy-certs', 'build-ng'), 
+        // build 
+        gulp.parallel('minify-server', 'minify-device-modules', 'build-ng'), 
+        gulp.parallel('remove-jsdoc-comments', 'build-docs', 'copy-config', 'copy-certs'), 
         'clean-intermediate'
     )
 );

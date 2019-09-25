@@ -1,5 +1,5 @@
 import { Component, OnInit, Input } from '@angular/core';
-import { Device } from '../device';
+import { Device } from '../Device';
 import { DeviceService } from '../device.service';
 import { ActivatedRoute } from '@angular/router';
 

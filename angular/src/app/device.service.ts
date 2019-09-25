@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { Device } from './device';
+import { Device } from './Device';
 import { DEVICES } from './mock-devices'
 import { Observable, of } from 'rxjs'
 import { DeviceMessageService } from './device-message.service';
@@ -28,11 +28,13 @@ export class DeviceService {
     let deviceList = null;
     try {
       deviceList = this.http.get<Device[]>(this.devicesURL + 'list', this.options);
+          // .pipe(
+          //   tap(results => results.sort())
+          // );
     } catch (err) {
       console.log(err);
     }
     return deviceList;
-    //return of(DEVICES);
   }
 
   private log(message: string) {

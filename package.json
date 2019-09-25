@@ -9,8 +9,8 @@
     "build-node": "gulp build",
     "build-server-docs": "jsdoc -d ./compiled/docs/server .",
     "build-api-docs": "apidoc -i intermediate/ -o compiled/docs/api",
-    "build-docs": "jsdoc -d ./compiled/docs/server . && apidoc -i intermediate/ -o compiled/docs/api",
-    "build-ng": "cd angular && ng build --prod --output-path ../compiled/ng",
+    "build-docs": "jsdoc -d ./compiled/docs/server . && jsdoc -d ./compiled/docs/server/devices ./Devices && apidoc -i intermediate/ -o compiled/docs/api",
+    "build-ng": "gulp build-ng",
     "build": "npm run build-node && npm run build-docs && npm run build-ng",
     "run-prod": "cd compiled && node server.js",
     "build-n-run": "npm run build && npm run run-prod",
@@ -30,6 +30,7 @@
   "homepage": "https://github.com/donaldelrod/Home-Assistant#readme",
   "dependencies": {
     "child-process": "^1.0.2",
+    "cors": "^2.8.5",
     "delivery-tracker": "^2.0.2",
     "express": "^4.16.4",
     "googleapis": "^34.0.0",
@@ -39,7 +40,7 @@
     "node-schedule": "^1.3.2",
     "open": "0.0.5",
     "proxmox": "^0.1.0",
-    "tplink-smarthome-api": "^0.23.1",
+    "tplink-smarthome-api": "^1.2.0",
     "tuyapi": "github:codetheweb/tuyapi"
   },
   "devDependencies": {
@@ -50,6 +51,7 @@
     "gulp-uglify-es": "^1.0.4",
     "gulp-util": "^3.0.8",
     "ts": "^0.2.2",
+    "typescript": "^3.3.3333",
     "typescript-require": "^0.2.10"
   },
   "apidoc": {

@@ -26,65 +26,17 @@ module.exports = {
     // },
     /**
      * Sets the state of supported devices/protocols. Supported devices currently are:
-     * - tplink
-     * - tuyapi
-     * - harmony devices (only sets/toggles power)
+     * - TPLink
+     * - Tuyapi
+     * - Harmony devices (only sets/toggles power)
      * @param {Object} device device object to set the state of
      * @param {boolean} state true for on, false for off, undefined for toggle
      * @param {Object} modules modules object from server.js
      * @returns {Device} the new state of the device
      */
     setDeviceState: async function(device, state, modules) {
-        var toggle = state === undefined;
-        var power_state;
-        if (toggle) {
-            if (device.deviceProto === 'tplink') {
-                power_state = !device.obj.relayState
-                device.obj.setPowerState(power_state);
-                device.lastState = power_state;
-            } else if (device.deviceProto === 'tuyapi') {
-                device.obj.get().then(status => {
-                    power_state = !status;
-                    device.obj.set({set: !status}).then(result => {
-                        if (result)
-                            console.log('status change succeeded');
-                        else console.log('status change failed');
-                        device.lastState = !status;
-                    }).catch(err => console.log('could not change tuyapi device state: ' + err));
-                }).catch(err => console.log(err));
-            } else if (device.deviceProto === 'harmony') {
 
-                var powerControl = this.getHarmonyControl(modules, device.name, 'Power', 'PowerToggle');
-
-                if (powerControl !== undefined) {
-                    harmony_tools.sendHarmonyCommand(modules, powerControl.formattedCommand, device.belongsToHub);
-                    device.lastState = device.lastState === undefined ? undefined : !device.lastState;
-                } else {
-                    console.log('Harmony control not found: Power PowerToggle');
-                    return undefined;
-                }
-            } //else if (device.deviceProto === 'hue') {
-
-            //}
-            return device;
-        }
-        //if we are not toggling the power and instead setting the state directly
-        if (device.deviceProto === 'tplink') {
-            device.obj.setPowerState(state);
-            power_state = state;
-            device.lastState = state;
-        } else if (device.deviceProto === 'tuyapi') {
-            await device.obj.set({set: state}).then(result => {
-                power_state = state;
-                if (result) {
-                    console.log('successfully set state to ' + state);
-                    device.lastState = state;
-                }
-                else console.log('failed to set state to true');
-            }).catch(err => console.log(err));
-            
-        }
-        else if (device.deviceProto === 'harmony') {
+        if (device.deviceProto === 'harmony') {
             var control = state === true ? 'PowerOn' : 'PowerOff';
             var powerControl = this.getHarmonyControl(modules, device.name, 'Power', control);
 
@@ -104,30 +56,30 @@ module.exports = {
         }
         return device;
     },
-    /**
-     * Finds the specific Harmony control for the given input
-     * @param {Object} modules modules object from server.js
-     * @param {string} deviceName the name of the device to get the controls for
-     * @param {string} controlGroup the control group of the control, i.e. 'Power'
-     * @param {string} control the specific control, i.e. 'VolumeUp'
-     * @returns {Object} the object for the specified control
-     */
-    getHarmonyControl: function(modules, deviceName, controlGroup, control) {
-        var selectedDevice = modules.harmony.devices.find((eachDevice) => {
-            return eachDevice.name === deviceName;
-        });
-        if (selectedDevice === undefined)
-            return undefined;
-        var selectedCG = selectedDevice.controlGroups.find((cg) => {
-                return cg.name === controlGroup;
-        });
-        if (selectedCG === undefined)
-            return undefined;
-        var selectedControl = selectedCG.controls.find((thisControl) => {
-            return thisControl.name === control;
-        });
-        return selectedControl;
-    },
+    // /**
+    //  * Finds the specific Harmony control for the given input
+    //  * @param {Object} modules modules object from server.js
+    //  * @param {string} deviceName the name of the device to get the controls for
+    //  * @param {string} controlGroup the control group of the control, i.e. 'Power'
+    //  * @param {string} control the specific control, i.e. 'VolumeUp'
+    //  * @returns {Object} the object for the specified control
+    //  */
+    // getHarmonyControl: function(modules, deviceName, controlGroup, control) {
+    //     var selectedDevice = modules.harmony.devices.find((eachDevice) => {
+    //         return eachDevice.name === deviceName;
+    //     });
+    //     if (selectedDevice === undefined)
+    //         return undefined;
+    //     var selectedCG = selectedDevice.controlGroups.find((cg) => {
+    //             return cg.name === controlGroup;
+    //     });
+    //     if (selectedCG === undefined)
+    //         return undefined;
+    //     var selectedControl = selectedCG.controls.find((thisControl) => {
+    //         return thisControl.name === control;
+    //     });
+    //     return selectedControl;
+    // },
     /**
      * Converts the devices object to a .json friendly format
      * @param {Object} devices devices from server.js
@@ -259,23 +211,7 @@ module.exports = {
             }
         });
     },
-    /**
-     * Queries supported devices for their power state
-     * Currently supported devices are:
-     * - tplink
-     * - tuyapi
-     * @param {Object} device Individual device from the array devices in server.js
-     * @returns {Promise<boolean>} resolves to the status of the device
-     */
-    getDeviceState: function(device) {
-        if (device.deviceProto === 'tplink') {
-            return device.obj.relayState;
-        } else if (device.deviceProto === 'tuyapi') {
-            return device.obj.get().then( (status) => {
-                return status;
-            }).catch((reason) => {console.log(reason); return undefined});
-        }
-    },
+
     /**
      * Creates an example json file for users to fill out with
      * Device data
