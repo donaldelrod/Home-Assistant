@@ -12,6 +12,7 @@ let devices = globals.devices;
  * @returns {JSON} the device list in a sendable format
  */
 function getSendableDevices() {
+    devices = globals.getDevices();
     var dev_list = devices.map((d) => { 
         return d.getSendableDevice()
     }).filter((d) => {
@@ -74,6 +75,16 @@ function getSendableDevices() {
 router.route('/list').get((req, res) => {    
     var dev_list = getSendableDevices();
     res.json(dev_list);
+});
+
+router.route('/rooms').get((req, res) => {
+    let rooms = [];
+    var dev_list = getSendableDevices();
+    dev_list.forEach( (dev) => {
+        rooms[dev.roomID].devices.push(dev);
+        rooms[dev.roomID].name = dev.roomName;
+    });
+    res.json(rooms);
 });
 
 

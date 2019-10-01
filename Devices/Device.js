@@ -9,7 +9,7 @@
  */
 class Device {
     //ts file in angular folder
-    constructor(id, name, type, kind, proto, groups, lastState, isTogg, lastStateStr, ip) {
+    constructor(id, name, type, kind, proto, groups, lastState, isTogg, lastStateStr, ip, roomid, roomname) {
         this.deviceID       = id;
         this.name           = name;
         this.deviceType     = type;
@@ -20,6 +20,8 @@ class Device {
         this.isToggle       = isTogg;
         this.lastStateString = lastStateStr;
         this.ip             = ip;
+        this.roomID         = roomid;
+        this.roomName       = roomname;
         
         this.unavailable    = true;
     }
@@ -43,7 +45,9 @@ class Device {
             groups:             this.groups, 
             lastState:          this.lastState, 
             isToggle:           this.isToggle, 
-            lastStateString:    this.lastStateString
+            lastStateString:    this.lastStateString,
+            roomID:             this.roomID,
+            roomName:           this.roomName
         };
     };
 

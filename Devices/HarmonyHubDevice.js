@@ -28,7 +28,9 @@ class HarmonyHubDevice extends Device {
             d.lastState, 
             false, 
             d.lastStateString,
-            d.ip
+            d.ip,
+            d.roomID,
+            d.roomName
         );
 
         this.children = [];
@@ -54,16 +56,17 @@ class HarmonyHubDevice extends Device {
             rawCommands.device.forEach( (rawDevice) => {
 
                 let t = new Device(
-                    devices.length, //deviceID
-                    rawDevice.label, //name
-                    rawDevice.type, //deviceType
-                    'Harmony - ' + rawDevice.type, //deviceKind
-                    'HarmonyDevice', //deviceProto
-                    ['harmony'], //groups
-                    false, //lastState
-                    true, //isToggle
-                    'off', //lastStateString
-                    "" //ip
+                    devices.length,                 //deviceID
+                    rawDevice.label,                //name
+                    rawDevice.type,                 //deviceType
+                    'Harmony - ' + rawDevice.type,  //deviceKind
+                    'HarmonyDevice',                //deviceProto
+                    ['harmony'],                    //groups
+                    false,                          //lastState
+                    true,                           //isToggle
+                    'off',                          //lastStateString
+                    "",                             //ip
+                    this.room                       //room
                 );
 
                 let tempDevice = new HarmonyDevice(
@@ -171,7 +174,9 @@ class HarmonyHubDevice extends Device {
             isToggle:       this.isToggle, 
             lastStateString:this.lastStateString,
             ip:             this.ip,
-            children:       sc
+            roomID:         this.roomID,
+            roomName:       this.roomName
+            // children:       sc
         }    
     }
 

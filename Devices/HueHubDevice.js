@@ -27,7 +27,9 @@ class HueHubDevice extends Device {
             d.lastState, 
             d.isToggle, 
             d.lastStateString,
-            d.ip
+            d.ip,
+            d.roomID,
+            d.roomName
         );
 
         this.username = options.username;
@@ -50,7 +52,10 @@ class HueHubDevice extends Device {
             groups:             this.groups, 
             lastState:          this.lastState, 
             isToggle:           this.isToggle, 
-            lastStateString:    this.lastStateString
+            lastStateString:    this.lastStateString,
+            ip:                 this.ip,
+            roomID:             this.roomID,
+            roomName:           this.roomName
         };
     };
 
@@ -132,16 +137,17 @@ class HueHubDevice extends Device {
             while(hueDevices[''+i] !== undefined) {
                 var hueDevice = hueDevices[''+i];
                 let t = new Device(
-                    devices.length, //deviceID
-                    hueDevice.name, //name
-                    hueDevice.type, //deviceType
-                    hueDevice.productid, //deviceKind
-                    'HueDevice', //deviceProto
-                    ['lights','hue'], //groups
-                    hueDevice.state.on, //lastState
-                    true, //isToggle
-                    hueDevice.state.on ? 'on' : 'off', //lastStateString
-                    this.ip //ip
+                    devices.length,                     //deviceID
+                    hueDevice.name,                     //name
+                    hueDevice.type,                     //deviceType
+                    hueDevice.productid,                //deviceKind
+                    'HueDevice',                        //deviceProto
+                    ['lights','hue'],                   //groups
+                    hueDevice.state.on,                 //lastState
+                    true,                               //isToggle
+                    hueDevice.state.on ? 'on' : 'off',  //lastStateString
+                    this.ip,                            //ip
+                    this.room                           //room
                 );
                 var tempDevice = new HueDevice(
                     t,

@@ -27,10 +27,8 @@ var httpsoptions         =   {
                             key: fs.readFileSync('./https_key.pem', 'utf8'),  
                             cert: fs.readFileSync('./https_cert.crt', 'utf8')  
                         };
-var multer          = require('multer');
-var upload          = multer({dest: '/plexpass/'});
 var schedule        = require('node-schedule');
-var cors            = require('cors');
+//var cors            = require('cors');
 
 var platform = process.platform;
 
@@ -42,7 +40,6 @@ var prox_tools      = require('./prox_tools.js');
 var google_tools    = require('./google_tools.js');
 var activity_tools  = require('./activity_tools.js');
 var netgear_tools   = require('./netgear_tools.js');
-var harmony_tools   = require('./harmony_tools.js');
 
 const Device        = require('./Devices/Device.js');
 
@@ -123,7 +120,9 @@ async function processDevices(deviceConfig) {
                 false,
                 device.isToggle,
                 'off',
-                device.ip
+                device.ip,
+                device.roomID,
+                device.roomName
             );
             
             // here any additional details for device setup are added to the Device object
@@ -180,28 +179,8 @@ function pollDevices() {
             }).catch(err => console.log(err));
         }
     });
+    globals.setDevices(devices);
 }
-
-// /**
-//  * Converts the device list in memory to HTTP sendable devices
-//  * @function getSendableDevices
-//  * @returns {JSON} the device list in a sendable format
-//  */
-// function getSendableDevices() {
-//     var dev_list = devices.map((d) => { 
-//         return d.getSendableDevice()
-//     }).filter((d) => {
-//         if (d !== undefined) return d;
-//     });
-// //might need to change front end here for differences in sendable devices now
-//     //     if (d.deviceProto === 'harmony') {
-//     //         sendableDevice.harmony = d.controlGroups;
-//     //         sendableDevice.harmonyControls = true;
-//     //     }
-//     //     return sendableDevice;
-//     // });
-//     return dev_list.sort(function(a, b) {return a.deviceID - b.deviceID});
-// }
 
 /**
  * Queries the Netgear Router for the list of attached devices, and then checks the attached devices to see if they belong to anyone in the profiles list.
@@ -319,140 +298,17 @@ var nonsecureServer = http.createServer(app).listen(9875);
 var secureServer = https.createServer(httpsoptions, app).listen(9876);
 
 
-
 app.use('/api/devices', require('./routes/devices.js'));
 app.use('/api/profiles', require('./routes/profiles.js'));
+app.use('/api/webhooks', require('./routes/webhooks.js'));
+app.use('/api/metrics', require('./routes/metrics.js'));
+app.use('/api/opencv', require('./routes/opencv.js'));
+app.use('/api/proxmox', require('./routes/proxmox.js'));
+app.use('/api/harmony', require('./routes/harmony.js'));
+app.use('/api/google', require('./routes/google.js'));
+app.use('/api/netgear', require('./routes/netgear.js'));
 
 //-------------------------------------------------------API Endpoints from here on
-
-// //----------------------------------------------Device API
-// /**
-//  * @apiDefine authToken
-//  * @apiParam (query) {string} authToken the authentication token of the server, sent as query
-//  * @apiParamSample
-//  * @apiError InvalidAuthToken HTTP/HTTPS request did not contain a valid authToken
-//  * @apiErrorExample Response (example):
-//  *      HTTP/2.0 401 Authentication Invalid
-//  *      {
-//  *          "error": "InvalidAuthToken"
-//  *      }
-//  */
-
-// /**
-//  * @apiDefine deviceNotExist
-//  * @apiError DeviceNotExist requested device does not exist
-//  * @apiErrorExample {json} Response (example):
-//  *      HTTP/2.0 404 Not Found
-//  *      {
-//  *          "error": "DeviceNotExist"
-//  *      }
-//  */
-
-// /**
-//  * @apiDefine deviceNotResponsive
-//  * @apiError DeviceNotResponsive operation was not able to process the device
-//  * @apiErrorExample {json} Response (example):
-//  *      HTTP/2.0 500 DeviceUnavailable
-//  *      {
-//  *          "error": "DeviceNotResponsive"
-//  *      }
-//   */
-
-// /**
-//  * @api {get} /api/devices/list ListDevices
-//  * @apiDescription Lists all the currently known/controllable devices
-//  * @apiName ListDevices
-//  * @apiGroup Devices
-//  * @apiVersion 0.1.0
-//  * 
-//  * @apiSuccess (200) {Device[]} devices the full list of devices from the server
-//  * 
-//  * @apiUse authToken
-//  */
-// app.route('/api/devices/list').get((req, res) => {    
-//     if (!checkRequest(req, res)) return;
-
-//     var dev_list = getSendableDevices();
-//     //console.log(dev_list);
-//     res.json(dev_list);
-// });
-
-
-// /**
-//  * @api {get} /api/devices/:deviceID/info GetDeviceInfo
-//  * @apiDescription Gets info about the specific device
-//  * @apiName GetDeviceInfo
-//  * @apiGroup Devices
-//  * @apiVersion 0.1.0
-//  * 
-//  * @apiSuccess (200) {Device} device returns the requested device information from the server
-//  * @apiUse deviceNotExist
-//  * @apiUse authToken
-//  */
-// app.route('/api/devices/:deviceID/info').get(async (req, res) => {
-//     if (!checkRequest(req, res)) return;
-
-//     var index = parseInt(req.params.deviceID);
-//     let d = devices[index];
-//     if (d === undefined) {
-//         res.status(404).json({error: 'DeviceNotExist'});
-//         return;
-//     }
-//     res.json(d.getSendableDevice());
-// });
-
-
-// /**
-//  * @api {get} /api/devices/:deviceID/set/:state SetDeviceState
-//  * @apiDescription Sets the state of an individual device 
-//  * @apiName SetDeviceState
-//  * @apiGroup Devices
-//  * @apiVersion 0.1.0
-//  * 
-//  * @apiParam (path) {number} deviceID the ID of the device
-//  * @apiParam (path) {number} state the state the device with id deviceID should be set to, this should be 0 or 1
-//  * 
-//  * @apiSuccess (200) {Device} device returns the updated Device object
-//  * @apiUse deviceNotExist
-//  * @apiUse deviceNotResponsive
-//  * @apiUse authToken
-//  */
-// app.route('/api/devices/:deviceID/set/:state').get( async (req, res) => {
-//     if (!checkRequest(req, res)) return;
-
-//     var index = parseInt(req.params.deviceID);
-//     var device = devices[index];
-//     if (device === undefined) {
-//         res.status(404).json({error: 'DeviceNotExist'});
-//         return;
-//     }
-//     var state = req.params.state === '1' ? true : (req.params.state === '0' ? false : undefined);
-//     device = await device.setState(state);
-//     //let d = await device_tools.setDeviceState(device, state, modules);
-//     if (device === undefined) {
-//         res.status(500).json({error: 'DeviceNotResponsive'});
-//         return;
-//     }
-//     res.json(device);
-// });
-
-// //-----------------------------------------Profiles API
-
-// /**
-//  * @api {get} /api/profiles/list ListProfiles
-//  * @apiDescription Returns the loaded profiles from the server
-//  * @apiName ListProfiles
-//  * @apiGroup Profiles
-//  * @apiVersion 0.1.0
-//  * 
-//  * @apiSuccess (200) {Profile[]} profiles the full list of profiles from the server
-//  * @apiUse authToken
-//  */
-// app.route('/api/profiles/list').get( (req, res) => {
-//     if (!checkRequest(req, res)) return;
-
-//     res.json(profiles);
-// });
 
 //-----------------------------------------Group API
 
@@ -471,7 +327,6 @@ app.use('/api/profiles', require('./routes/profiles.js'));
  * @apiUse authToken
  */
 app.route('/api/groups/:control').get((req, res) => {
-    //if (!checkRequest(req, res)) return;
 
     var groups = req.query.groups;
     var control = parseInt(req.params.control);
@@ -525,7 +380,6 @@ app.route('/api/groups/:control').get((req, res) => {
  * @apiUse authToken
  */
 app.route('/api/activities/name/:name').get((req, res) => {
-    //if (!checkRequest(req, res)) return;
 
     device_tools.runActivity(modules, activities, devices, req.params.name).then((success) => {
         res.status(success ? 200 : 503).send( (success ? 'successfully ran ' : 'failed to run ') + 'activity ' + req.params.name);
@@ -544,7 +398,6 @@ app.route('/api/activities/name/:name').get((req, res) => {
  * @apiUse authToken
  */
 app.route('/api/activities/scheduled').get((req, res) => {
-    //if (!checkRequest(req, res)) return;
 
     var sch = scheduledFunctions.map((eachFunction) => {
         return eachFunction.jobname;
@@ -552,485 +405,7 @@ app.route('/api/activities/scheduled').get((req, res) => {
     res.json(sch);
 });
 
-//-------------------------------Stats and Performance API
-
-/**
- * @api {get} /api/metrics/me/cpu GetServerCPUMetrics
- * @apiDescription Returns the computer running the server's CPU metrics
- * @apiName GetServerCPUMetrics
- * @apiGroup Metrics
- * @apiVersion 0.1.0
- * 
- * @apiSuccess (200) {Object} CPUMetrics returns the metrics of each cpu core of the server
- * @apiUse authToken
- */
-app.route('/api/metrics/me/cpu').get((req, res) => {
-    //if (!checkRequest(req, res)) return;
-
-    res.json(os.cpus());
-});
-
-/**
- * @api {get} /api/metrics/me/mem GetServerMemMetrics
- * @apiDescription Returns the computer running the server's memory metrics
- * @apiName GetServerMemMetrics
- * @apiGroup Metrics
- * @apiVersion 0.1.0
- * 
- * @apiSuccess (200) {Object} MemMetrics returns the metrics of the server's memory
- * @apiUse authToken
- */
-app.route('/api/metrics/me/mem').get((req, res) => {
-    //if (!checkRequest(req, res)) return;
-    var tmem = os.totalmem();
-    var fmem = os.freemem();
-    var umem = tmem - fmem;
-    var mem = {
-        totalmem: tmem,
-        freemem: fmem,
-        usedmem: umem
-    }
-    res.json(mem);
-});
-
-/**
- * @api {get} /api/metrics/me/load GetServerCPULoadMetrics
- * @apiDescription Returns the computer running the server's CPU load metrics
- * @apiName GetServerCPULoadMetrics
- * @apiGroup Metrics
- * @apiVersion 0.1.0
- * 
- * @apiSuccess (200) {Object} CPULoadMetrics returns the metrics of the avaerage load of the server
- * @apiUse authToken
- */
-app.route('/api/metrics/me/load').get((req, res) => {
-    //if (!checkRequest(req, res)) return;
-
-    res.json({load: os.loadavg()});
-});
-
-/**
- * @api {get} /api/metrics/me/network GetServerNetworkInterfaces
- * @apiDescription Returns the computer running the server's network interfaces
- * @apiName GetServerNetworkInterfaces
- * @apiGroup Metrics
- * @apiVersion 0.1.0
- * 
- * @apiSuccess (200) {Object} NetworkInterfaces returns the network interfaces of the server
- * @apiUse authToken
- */
-app.route('/api/metrics/me/network').get((req, res) => {
-    //if (!checkRequest(req, res)) return;
-
-    res.json(os.networkInterfaces());
-});
-
-/**
- * @api {get} /api/metrics/me/all GetAllServerMetrics
- * @apiDescription Returns the full spectrum of metrics about the computer running the server
- * @apiName GetAllServerMetrics
- * @apiGroup Metrics
- * @apiVersion 0.1.0
- * 
- * @apiSuccess (200) {Object} AllMetrics returns all available metrics about the computer running the server
- * @apiUse authToken
- */
-app.route('/api/metrics/me/all').get((req, res) => {
-    //if (!checkRequest(req, res)) return;
-
-    var tmem = os.totalmem();
-    var fmem = os.freemem();
-    var umem = tmem - fmem;
-    var mem = {
-        totalmem: tmem,
-        freemem: fmem,
-        usedmem: umem
-    }
-
-    var cpus        = os.cpus();
-    var ni          = os.networkInterfaces();
-    var load        = os.loadavg();
-    var end         = os.endianness();
-    var platform    = os.platform();
-    var arch        = os.arch();
-    var uptime      = os.uptime();
-
-    var stats = {
-        platform: platform,
-        arch: arch,
-        endianness: end,
-        cpus: cpus,
-        memory: mem,
-        networkInterfaces: ni,
-        loadavg: load,
-        uptime: uptime
-    }
-
-    res.json(stats);
-});
-
-//-------------------------------Google API
-
-/**
- * @api {get} /oauth2/google RecieveGoogleAuth
- * @apiDescription The OAuth2 endpoint of the server so you can log in
- * @apiName RecieveGoogleAuth
- * @apiGroup VendorAPI
- * @apiVersion 0.1.0
- * @apiParam (query) {string} code the token code returned from Google
- * @apiParam (query) {scope} scope the scope of the access to Google functions
- * 
- * @apiSuccess (200) {Status} OK-200 returns a status code of 200
- */
-app.route('/oauth2/google').get((req, res) => {
-    var token_code = req.query.code;
-    var scope_oauth = req.query.scope;
-    //res.send(google_tools.saveAccessToken(google_oauth, token_code));
-    res.send(200);
-    console.log(google_tools.saveAccessToken(modules.google.google_oauth, token_code));
-});
-
-/**
- * @api {get} /api/modules/google/cal/upcoming GetUpcomingGCalEvents
- * @apiDescription Gets upcoming events in your Google Calendar
- * @apiName GetUpcomingGCalEvents
- * @apiGroup Google
- * @apiVersion 0.1.0
- * 
- * @apiSuccess (200) {Object[]} events returns an array of upcoming events
- * @apiUse authToken
- */
-app.route('/api/modules/google/cal/upcoming').get((req, res) => {
-    //if (!checkRequest(req, res)) return;
-
-    //google_tools.getGCalEvents(google_oauth, 15).then(function (events) {
-    google_tools.getGCalEvents(modules.google.google_oauth, 15).then(function (events) {
-        res.json(events);
-    }).catch(function (reason) {
-        res.send(reason);
-    });
-});
-
-//doesn't really do anything but I'm leaving it here to remind me to fix it
-/**
- * @api {get} /api/modules/google/gmail/labels GetGmailLabels
- * @apiDescription Gets labels from recent emails in the linked Gmail account
- * @apiName GetGmailLabels
- * @apiGroup Google
- * @apiVersion 0.0.1
- * 
- * @apiSuccess (200) {Object[]} labels returns an array of email labels
- * @apiUse authToken
- */
-app.route('/api/modules/google/gmail/labels').get((req, res) => {
-    //if (!checkRequest(req, res)) return;
-
-    //google_tools.getGmailLabels(google_oauth);
-    google_tools.getGmailLabels(modules.google.google_oauth);
-    res.sendStatus(200);
-});
-
-//doesn't really work right now
-/**
- * @api {get} /api/modules/google/gmail/emails GetRecentGmails
- * @apiDescription Gets recent emails from the linked Gmail inbox
- * @apiName GetRecentGmails
- * @apiGroup Google
- * @apiVersion 0.0.1
- * 
- * @apiSuccess (200) {Object[]} gmails returns an array of recent gmails
- * @apiUse authToken
- */
-app.route('/api/modules/google/gmail/emails').get(async (req, res) => {
-    //if (!checkRequest(req, res)) return;
-
-    //google_tools.getGmailLabels(google_oauth);
-    var emails = await google_tools.getRecentEmails(modules.google.google_oauth);
-    res.send(200, emails);
-});
-
-//------------------------------------Netgear API
-
-/**
- * @api {get} /api/netgearrouter/attached GetNetgearAttachedDevices
- * @apiDescription Returns all the devices connected to the Linked Netgear router
- * @apiName GetNetgearAttachedDevices
- * @apiGroup Netgear
- * @apiVersion 0.1.0
- * 
- * @apiSuccess (200) {Object[]} attachedDevices returns an array of attached devices
- * @apiUse authToken
- */
-app.route('/api/netgearrouter/attached').get(async (req, res) => {
-    //if (!checkRequest(req, res)) return;
-
-    var attachedDevices = await netgear_tools.getAttachedDevices(modules);
-    res.send(attachedDevices);
-});
-
-/**
- * @api {get} /api/netgearrouter/info GetNetgearAttributes
- * @apiDescription Returns info about the Netgear router
- * @apiName GetNetgearAttributes
- * @apiGroup Netgear
- * @apiVersion 0.1.0
- * 
- * @apiSuccess (200) {Object[]} netgearInfo returns object with Netgear router attributes
- * @apiUse authToken
- */
-app.route('/api/netgearrouter/info').get((req, res) => {
-    //if (!checkRequest(req, res)) return;
-
-    modules.netgearRouter.login(modules.netgearRouter.storedPass, modules.netgearRouter.storedUser, modules.netgearRouter.storedHost, modules.netgearRouter.storedPort).then(function(successfulLogin) {
-        if (successfulLogin) {
-            modules.netgearRouter.getInfo().then(function(info) {
-                res.send(info);
-            });
-        }
-    });
-});
-
-//---------------------------Harmony API
-
-/**
- * @api {get} /api/modules/harmony/devices GetHarmonyDevices
- * @apiName GetHarmonyDevices
- * @apiGroup Harmony
- * @apiVersion  0.1.0
- * @apiDescription Send all the devices connected to the linked Harmony hub
- * 
- * @apiSuccess (200) {Object[]} harmonyDevices an array of devices connected to the Harmony hub
- * @apiUse authToken
- */
-app.route('/api/modules/harmony/devices').get((req, res) => {
-    //if (!checkRequest(req, res)) return;
-
-    res.json(modules.harmony.devices);
-});
-
-/**
- * @api {get} /api/modules/harmony/control/:device_name/:control_group/:control ControlHarmonyDevice
- * @apiName ControlHarmonyDevice
- * @apiGroup Harmony
- * @apiVersion  0.1.0
- * @apiDescription Control a specific Harmony controlled device by specifying a device name, control group and control
- * 
- * @apiParam (path) {string} device_name the name of the Harmony device
- * @apiParam (path) {string} control_group the control group that the control belongs to
- * @apiParam (path) {string} control the control to execute
- * 
- * @apiSuccess (200) {HTTPStatus} OK-200 returns a status code of 200
- * @apiError NoHarmonyControl the given control or device could not be found
- * @apiErrorExample {json} Response (example):
- *      HTTP/2.0 503 Service Unavailable
- *      {
- *          "error": "Harmony control could not be found"
- *      }
- * @apiUse authToken
- */
-app.route('/api/modules/harmony/control/:device_name/:control_group/:control').get((req, res) => {
-    //if (!checkRequest(req, res)) return;
-
-    var selectedControl = device_tools.getHarmonyControl(modules, req.params.device_name, req.params.control_group, req.params.control);
-
-    if (selectedControl !== undefined) {
-        harmony_tools.sendHarmonyCommand(modules, selectedControl.formattedCommand);
-        res.sendStatus(200);
-    } else {
-        console.log('Harmony control not found: ' + req.params.control_group + ' ' + req.params.control);
-        res.status(503).json({error:'Harmony control could not be found...'});
-    }
-});
-
-//-----------------------------------------Plex API
-
-/**
- * @api {post} /plex/webhook PlexWebhookEndpoint
- * @apiName PlexWebhookEndpoint
- * @apiGroup VendorAPI
- * @apiVersion  0.1.0
- * @apiDescription Reacts to Plex's webhooks, and will look through activities to see if any will be triggered by this webhook
- * 
- * @apiSuccess (200) {HTTPStatus} OK-200 returns a status code of 200
- */
-app.route('/plex/webhook').post(upload.single('thumb'), (req, res, next) => {
-    var payload = JSON.parse(req.body.payload);
-    //console.log(payload);
-
-    activities.filter((eachActivity) => {
-        return (eachActivity.triggers.plex !== undefined && eachActivity.on);
-    }).map((plexActivity) => {
-        var triggerSpecs = plexActivity.triggers.plex;
-        var eventMatch = triggerSpecs.event === undefined || triggerSpecs.event.includes(payload.event);
-        var accountMatch = triggerSpecs.account === undefined || triggerSpecs.account.includes(payload.Account.title.toLowerCase());
-        var playerMatch = triggerSpecs.player === undefined || triggerSpecs.player.includes(payload.Player.uuid);
-        if (eventMatch && accountMatch && playerMatch) {
-            device_tools.runActivity(modules, activities, devices, plexActivity.name);
-        }
-    });
-
-    res.sendStatus(200);
-});
-
-//---------------------------------------------Proxmox API
-
-/**
- * @api {get} /api/prox/nodes GetProxNodes
- * @apiName GetProxNodes
- * @apiGroup Proxmox
- * @apiVersion  0.1.0
- * @apiDescription Returns an array of nodes that the Proxmox server is aware of
- * 
- * @apiSuccess (200) {Object[]} nodes an array of nodes in the Proxmox server
- * @apiUse authToken
- */
-app.route('/api/prox/nodes').get(async (req, res) => {
-    //if (!checkRequest(req, res)) return;
-
-    var nodes = await prox_tools.getNodes(modules.prox);
-    res.json(nodes);
-});
-
-/**
- * @api {get} /api/prox/cluster GetProxCluster
- * @apiName GetProxCluster
- * @apiGroup Proxmox
- * @apiVersion  0.1.0
- * @apiDescription Returns an array of clusters that the Proxmox server is aware of
- * 
- * @apiSuccess (200) {Object[]} nodes an array of clusters in the Proxmox server
- * @apiUse authToken
- */
-app.route('/api/prox/cluster').get(async (req, res) => {
-    //if (!checkRequest(req, res)) return;
-
-    var clusterStatus = await prox_tools.getClusterStatus(modules.prox);
-    res.json(clusterStatus);
-});
-
-//---------------------------------------------OpenCV API
-
-/**
- * @apiDefine linuxOnly
- * @apiError ModuleNotSupported this endpoint uses a module that is not available on the platform the server is running on
- * @apiErrorExample {json} Response (example):
- *      HTTP/2.0 501 Not Implemented
- *      {
- *          "error": "OpenCV only supported on Raspberry Pi"
- *      }
- */
-
-/**
- * @api {get} /api/opencv/takepic OpenCVTakePicture
- * @apiName OpenCVTakePicture
- * @apiGroup OpenCV
- * @apiVersion  0.1.0
- * @apiDescription *Linux/Raspberry Pi Only* Tells the server to take a picture using an attached webcam
- * 
- * @apiSuccess (200) {HTTPStatus} OK-200 returns a status code of 200
- * @apiUse linuxOnly
- * @apiUse authToken
- */
-app.route('/api/opencv/takepic').get((req, res) => {
-    //if (!checkRequest(req, res)) return;
-    
-    if (platform !== 'linux') {
-        res.status(501).json({error: 'OpenCV only supported on Raspberry Pi'});
-        return;
-    }
-    var frame = modules.cv.webcam.read();
-    modules.cv.imwrite('./opencv/' + (new Date()).toISOString() + '.jpg', frame);
-    res.sendStatus(200);
-});
-
-/**
- * @api {get} /api/opencv/listpics OpenCVListPictures
- * @apiName OpenCVListPictures
- * @apiGroup OpenCV
- * @apiVersion  0.1.0
- * @apiDescription *Linux/Raspberry Pi Only* Returns a list of pictures taken by the server
- * 
- * @apiSuccess (200) {string[]} pictures a list of paths to the pictures taken
- * @apiError NoPictures no pictures were returned by this function
- * @apiErrorExample {json} Response (exmaple):
- *      HTTP/2.0 401 Not Found
- *      {
- *          "error": "Couldn't get pictures"
- *      }
- * @apiUse linuxOnly
- * @apiUse authToken
- */
-app.route('/api/opencv/listpics').get((req, res) => {
-    //if (!checkRequest(req, res)) return;
-    
-    if (platform !== 'linux') {
-        res.status(501).json({error: 'OpenCV only supported on Raspberry Pi'});
-        return;
-    }
-
-    var pictures = file_tools.getChildren('./opencv/');
-
-    if (pictures !== undefined)
-        res.status(200).json(pictures);
-    else res.status(401).json({error: 'Couldn\'t get pictures'});
-});
-
-/**
- * @api {get} /api/opencv/getpic/:filename OpenCVDownloadPicture
- * @apiName OpenCVDownloadPicture
- * @apiGroup OpenCV
- * @apiVersion  0.1.0
- * @apiDescription *Linux/Raspberry Pi Only* Sends the picture specified in the request to the client
- * 
- * @apiParam (path) {string} filename the name of the image that should be downloaded
- * 
- * @apiSuccess (200) {application/octet-stream} picture the picture specified in the request as an octet-stream
- * @apiError NoPictures no pictures were returned by this function
- * @apiErrorExample {json} Response (exmaple):
- *      HTTP/2.0 401 Not Found
- *      {
- *          "error": "Couldn't get picture"
- *      }
- * @apiUse linuxOnly
- * @apiUse authToken
- */
-app.route('/api/opencv/getpic/:filename').get((req, res) => { //idk if this works
-    //if (!checkRequest(req, res)) return;
-    
-    if (platform !== 'linux') {
-        res.status(501).json({error: 'OpenCV only supported on Raspberry Pi'});
-        return;
-    }
-    if (file_tools.fileExists(req.params.filename)) {
-        res.writeHead(200, {
-            "Content-Type": "application/octet-stream",
-            "Content-Disposition": "attachment; filename=" + req.params.filename
-        });
-        fs.createReadStream(req.query.filename).pipe(res);
-    }
-    else {
-        res.status(401).json({error: 'Couldn\'t get picture'});
-    }
-});
-
 //----------------------------------------------------Debug API
-
-/**
- * @api {get} /debug/modules DebugModules
- * @apiName DebugModules
- * @apiGroup Debugging
- * @apiVersion  0.1.0
- * 
- * @apiSuccess (200) {string} response 'bet thanks' 
- * @apiSuccessExample {string} Success-Response:
- * {
- *     "success" : "bet thanks"
- * }
- */
-app.route('/debug/modules').get( (req, res) => {
-    console.log(modules);
-    res.status(200).json({success:"bet thanks"}).end();
-});
 
 /**
  * @api {get} /debug/testAuthToken TestAuthToken

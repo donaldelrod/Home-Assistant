@@ -8,6 +8,12 @@ let DeviceModules       = [];
 let PluginModules       = [];
 
 exports.devices = devices;
+exports.getDevices = function() {
+    return devices;
+}
+exports.setDevices = function(newDevices) {
+    devices = newDevices;
+}
 exports.profiles = profiles;
 exports.getProfiles = function() {
     return profiles;

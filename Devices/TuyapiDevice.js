@@ -40,7 +40,10 @@ class TuyapiDevice extends Device {
             d.groups, 
             d.lastState, 
             d.isToggle, 
-            d.lastStateString
+            d.lastStateString,
+            d.ip,
+            d.roomID,
+            d.roomName
         );
 
         this.tuyapi = new TuyAPI({

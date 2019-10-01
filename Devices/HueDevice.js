@@ -23,7 +23,9 @@ class HueDevice extends Device {
             d.lastState, 
             d.isToggle, 
             d.lastStateString,
-            d.ip
+            d.ip,
+            d.roomID,
+            d.roomName
         );
 
         this.manufacturer   = options.manufacturer;
@@ -57,7 +59,9 @@ class HueDevice extends Device {
             model:              this.model,
             uid:                this.uid,
             swVersion:          this.swVersion,
-            hueID:              this.hueID
+            hueID:              this.hueID,
+            roomID:             this.roomID,
+            roomName:           this.roomName
         };
     };
 

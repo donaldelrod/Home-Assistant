@@ -43,20 +43,12 @@ class TPLinkDevice extends Device {
             d.lastState, 
             d.isToggle, 
             d.lastStateString,
-            d.ip
+            d.ip,
+            d.room
         );
 
-        
-        if (d.deviceKind === 'TPLink Bulb') {
-            this.tplink = TPClient.getBulb({host: d.ip});
-        } else if (d.deviceKind === 'TPLink Plug') {
-            this.tplink = TPClient.getPlug({host: d.ip});
-        }
-        
-        //this.tplink = null;
         this.sysinfo = '';
         this.mac = '';
-        //this.model = '';
         this.swVersion = '';
         this.hwVersion = '';
         this.tpid = 0;
@@ -66,7 +58,20 @@ class TPLinkDevice extends Device {
         this.oemid = '';
         this.alias = '';
         this.supportsDimmer = false;
-        // this.setup();
+
+        try {
+            if (d.deviceKind === 'TPLink Bulb') {
+                this.tplink = TPClient.getBulb({host: d.ip});
+            } else if (d.deviceKind === 'TPLink Plug') {
+                this.tplink = TPClient.getPlug({host: d.ip});
+            }
+        } catch (err) {
+            console.log(err);
+            this.unavailable = true;
+            this.tplink = null;
+        }
+        
+        
     }
 
     /**
@@ -74,6 +79,20 @@ class TPLinkDevice extends Device {
      * @async
      */
     async setup() {
+        if (this.tplink === null)
+            return null;
+        try {
+            this.sysinfo        = await this.tplink.getSysInfo();
+        } catch (err) {
+            console.log(err); 
+            this.sysinfo = null;
+            return null;
+        }
+        
+        //if null, device isn't currently connected
+        if (this.sysinfo === null)
+            return;
+        
         //get device state every 5 seconds
         await this.tplink.startPolling(5000);
 
@@ -88,10 +107,6 @@ class TPLinkDevice extends Device {
             this.logEvent('power-status', 'off');
         });
 
-        this.sysinfo        = await this.tplink.getSysInfo().catch((err) => {return null});
-        //if null, device isn't currently connected
-        if (this.sysinfo === null)
-            return;
         this.mac            = this.sysinfo.mac;
         this.tpalias        = this.sysinfo.alias;
         this.oemid          = this.sysinfo.oemId;
@@ -168,6 +183,8 @@ class TPLinkDevice extends Device {
             isToggle:       this.isToggle, 
             lastStateString:this.lastStateString,
             ip:             this.ip,
+            roomID:         this.roomID,
+            roomName:       this.roomName,
             mac:            this.mac,
             swVersion:      this.swVersion,
             hwVersion:      this.hwVersion,

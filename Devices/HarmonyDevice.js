@@ -25,7 +25,9 @@ class HarmonyDevice extends Device {
             d.groups, 
             d.lastState, 
             d.isToggle, 
-            d.lastStateString
+            d.lastStateString,
+            d.roomID,
+            d.roomName
         );
 
         this.controlPort    = options.controlPort;
@@ -122,7 +124,9 @@ class HarmonyDevice extends Device {
             lastState:      this.lastState, 
             isToggle:       this.isToggle, 
             lastStateString:this.lastStateString,
-            ip:             this.ip
+            ip:             this.ip,
+            roomID:         this.roomID,
+            roomName:       this.roomName
         }    
     }
 
