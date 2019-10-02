@@ -1,0 +1,9 @@
+<div class="module">
+  <a routerLink="/device/detail/{{device.deviceID}}">
+    <h4>{{device.name}}</h4>
+  </a>
+  <mat-slide-toggle class="toggleSwitch" *ngIf="device.isToggle"
+  (change)="setState(device, $event.checked)">
+      <!-- {{ device.lastStateString }} -->
+  </mat-slide-toggle>
+</div>

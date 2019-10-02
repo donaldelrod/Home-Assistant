@@ -10,6 +10,7 @@ import { DeviceService } from '../device.service';
 export class DashboardComponent implements OnInit {
 
   devices: Device[] = [];
+  rooms: string[] = [];
 
   constructor(private deviceService: DeviceService) { }
 
@@ -19,22 +20,30 @@ export class DashboardComponent implements OnInit {
 
   getDevices(): void {
     this.deviceService.getDevices()
-      .subscribe(devices => this.devices = devices);
+      .subscribe( (devices) => {
+        this.devices = devices;
+        // this.devices.forEach( (dev) => {
+        //   // if (this.rooms.indexOf(dev.room) == -1)
+        //   //   this.rooms.push(dev.room);
+            
+        // });
+        //console.log(this.devices);
+      });
   }
 
-  toggleState(d: Device, state: boolean): void {
+  // toggleState(d: Device, state: boolean): void {
 
-    console.log('lastState: ' + d.lastState + '\tstate: ' + state + '\tlastStateString: ' + d.lastStateString);
-    // d.lastState = state;
-    // d.lastStateString = state ? 'on' : 'off';
-    // if (state) {
+  //   console.log('lastState: ' + d.lastState + '\tstate: ' + state + '\tlastStateString: ' + d.lastStateString);
+  //   // d.lastState = state;
+  //   // d.lastStateString = state ? 'on' : 'off';
+  //   // if (state) {
 
-    //   //return "On";
-    // }
-    // else if (!state) {
-    //   //return "Off";
-    // }
+  //   //   //return "On";
+  //   // }
+  //   // else if (!state) {
+  //   //   //return "Off";
+  //   // }
 
-    this.deviceService.toggleDevice(d.deviceID, state).subscribe(dev => this.devices[d.deviceID] = dev);
-  }
+  //   this.deviceService.toggleDevice(d.deviceID, state).subscribe(dev => this.devices[d.deviceID] = dev);
+  // }
 }

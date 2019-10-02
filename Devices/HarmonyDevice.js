@@ -26,6 +26,7 @@ class HarmonyDevice extends Device {
             d.lastState, 
             d.isToggle, 
             d.lastStateString,
+            "",
             d.roomID,
             d.roomName
         );
@@ -77,7 +78,7 @@ class HarmonyDevice extends Device {
 
         this.logEvent('power-status', this.lastStateString)
 
-        return this;
+        return this.getSendableDevice();
     }
 
     /**

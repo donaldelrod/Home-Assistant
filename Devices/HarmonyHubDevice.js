@@ -9,8 +9,6 @@ const HarmonyDevice = require('./HarmonyDevice');
 
 var harmony         = require('harmonyhubjs-client');
 
-const hub = {};
-
 /**
  * Class representing a Harmony Hub, which is responsible for communicating with devices controlled by the Hub
  * @extends Device
@@ -66,7 +64,8 @@ class HarmonyHubDevice extends Device {
                     true,                           //isToggle
                     'off',                          //lastStateString
                     "",                             //ip
-                    this.room                       //room
+                    this.roomID,                    //room
+                    this.roomName
                 );
 
                 let tempDevice = new HarmonyDevice(
@@ -124,7 +123,7 @@ class HarmonyHubDevice extends Device {
      * Sets the state of the HarmonyHub. Currently, this is a dummy function, but might make it to power down all devices that it controls in the future
      * @async
      * @param {boolean} newState the state to set the device to
-     * @returns {HarmonyHubDevice} returns this device, with the updated state
+     * @returns {Object} returns this object as a sendable device, with the updated state
      */
     async setState(newState) {
 
@@ -133,7 +132,7 @@ class HarmonyHubDevice extends Device {
 
         this.logEvent('power-status', this.lastStateString)
 
-        return this;
+        return this.getSendableDevice();
     }
 
     /**

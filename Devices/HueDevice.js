@@ -77,7 +77,7 @@ class HueDevice extends Device {
         this.lastState = newState;
         this.lastStateString = this.lastState ? 'on' : 'off';
         
-        return this;
+        return this.getSendableDevice();
     };
 
     /**

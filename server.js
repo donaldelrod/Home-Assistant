@@ -29,7 +29,8 @@ var httpsoptions         =   {
                         };
 var schedule        = require('node-schedule');
 //var cors            = require('cors');
-
+//let hb              = require('homebridge');
+let hbs             = require('./Modules/HomeBridge')();//(hb);
 var platform = process.platform;
 
 

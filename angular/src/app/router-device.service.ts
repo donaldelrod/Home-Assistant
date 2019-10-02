@@ -9,7 +9,9 @@ import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 })
 export class RouterDeviceService {
 
-  private routerURL = 'http://donaldelrod.ddns.net:9875/api/netgearrouter/attached';
+  
+  private routerURL = 'http://localhost:9875/api/netgear/attached';
+  //private routerURL = 'http://donaldelrod.ddns.net:9875/api/netgear/attached';
 
   private options = {
     params: new HttpParams().set('authToken', 'xbbnq6y824006067')

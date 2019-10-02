@@ -8,7 +8,8 @@ import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 })
 export class ProfileService {
 
-  private profilesURL = 'http://donaldelrod.ddns.net:9875/api/profiles/list/';
+  private profilesURL = 'http://localhost:9875/api/profiles/list/';
+  //private profilesURL = 'http://donaldelrod.ddns.net:9875/api/profiles/list/';
 
   private options = {
     params: new HttpParams().set('authToken', 'xbbnq6y824006067')

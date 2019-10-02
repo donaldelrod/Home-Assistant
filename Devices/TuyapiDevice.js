@@ -74,7 +74,7 @@ class TuyapiDevice extends Device {
 
         this.logEvent('power-status', this.lastStateString)
 
-        return this;
+        return this.getSendableDevice();
     }
 
     /**

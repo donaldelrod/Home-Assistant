@@ -74,7 +74,7 @@ class HueHubDevice extends Device {
         this.lastState = newState;
         this.lastStateString = this.lastState ? 'on' : 'off';
         
-        return this;
+        return this.getSendableDevice();
     };
 
     /**
@@ -91,7 +91,7 @@ class HueHubDevice extends Device {
         this.lastState = !this.lastState;
         this.lastStateString = this.lastState ? 'on' : 'off';
 
-        return this;
+        return this.getSendableDevice();
     }
 
     /**
@@ -147,7 +147,8 @@ class HueHubDevice extends Device {
                     true,                               //isToggle
                     hueDevice.state.on ? 'on' : 'off',  //lastStateString
                     this.ip,                            //ip
-                    this.room                           //room
+                    this.roomID,                        //roomID
+                    this.roomName                       //roomName
                 );
                 var tempDevice = new HueDevice(
                     t,

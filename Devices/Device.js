@@ -28,8 +28,10 @@ class Device {
 
     /**
      * This class provides an interface to allow devices to run setup after being created. This is useful for when devices must connect to a hub, or if other devices need to act on this one
+     * @param {Device[]} devices the array of devices controlled by HomeAssistant
      */
-    setup() {}
+    setup(devices) {
+    }
     
     /**
      * Returns Device object expected in the frontend
@@ -60,7 +62,7 @@ class Device {
     async setState(newState) {
         this.lastState = newState;
         this.lastStateString = this.lastState ? 'on' : 'off';
-        return this;
+        return this.getSendableDevice();
     };
 
     /**
@@ -71,7 +73,7 @@ class Device {
     async toggleState() {
         this.lastState = !this.lastState;
         this.lastStateString = this.lastState ? 'on' : 'off';
-        return this;
+        return this.getSendableDevice();
     }
 
     /**
@@ -99,6 +101,5 @@ class Device {
     }
 
 }
-
 
 module.exports = Device;

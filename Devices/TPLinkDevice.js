@@ -44,7 +44,8 @@ class TPLinkDevice extends Device {
             d.isToggle, 
             d.lastStateString,
             d.ip,
-            d.room
+            d.roomID,
+            d.roomName
         );
 
         this.sysinfo = '';
@@ -57,20 +58,7 @@ class TPLinkDevice extends Device {
         this.tptype = '';
         this.oemid = '';
         this.alias = '';
-        this.supportsDimmer = false;
-
-        try {
-            if (d.deviceKind === 'TPLink Bulb') {
-                this.tplink = TPClient.getBulb({host: d.ip});
-            } else if (d.deviceKind === 'TPLink Plug') {
-                this.tplink = TPClient.getPlug({host: d.ip});
-            }
-        } catch (err) {
-            console.log(err);
-            this.unavailable = true;
-            this.tplink = null;
-        }
-        
+        this.supportsDimmer = false;        
         
     }
 
@@ -79,6 +67,21 @@ class TPLinkDevice extends Device {
      * @async
      */
     async setup() {
+
+        try {
+            if (this.deviceKind === 'TPLink Bulb') {
+                this.tplink = TPClient.getBulb({host: this.ip});
+            } else if (this.deviceKind === 'TPLink Plug') {
+                this.tplink = TPClient.getPlug({host: this.ip});
+            }
+        } catch (err) {
+            console.log(err);
+            this.unavailable = true;
+            this.tplink = null;
+            return;
+        }
+
+
         if (this.tplink === null)
             return null;
         try {

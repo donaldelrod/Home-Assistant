@@ -1,4 +1,4 @@
 <div class="profiles col-1-1" *ngFor="let profile of profiles">
   {{profile.person}}<br>
-  {{ (profile.strength / profile.identifiers.ip.length) * 100}}%<br>
+  {{ profile.identifiers.ip.length == 0 ? 0 : ((profile.strength / profile.identifiers.ip.length) * 100) }}%<br>
 </div>

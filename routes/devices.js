@@ -140,7 +140,7 @@ router.route('/:deviceID/set/:state').get( async (req, res) => {
         res.status(500).json({error: 'DeviceNotResponsive'});
         return;
     }
-    res.json(device.getSendableDevice());
+    res.json(device);
 });
 
 

@@ -10,7 +10,8 @@ import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 })
 export class DeviceService {
 
-  private devicesURL = 'http://donaldelrod.ddns.net:9875/api/devices/';
+  private devicesURL = 'http://localhost:9875/api/devices/';
+  //private devicesURL = 'http://donaldelrod.ddns.net:9875/api/devices/';
 
   //private authString = '?authToken=xbbnq6y824006067';
 
@@ -28,12 +29,13 @@ export class DeviceService {
     let deviceList = null;
     try {
       deviceList = this.http.get<Device[]>(this.devicesURL + 'list', this.options);
-          // .pipe(
-          //   tap(results => results.sort())
-          // );
     } catch (err) {
       console.log(err);
     }
+    // console.log('service');
+    
+    // console.log(deviceList);
+
     return deviceList;
   }
 
@@ -46,6 +48,12 @@ export class DeviceService {
     this.log(`fetched device id=${id}`);
     let d = this.http.get<Device>(this.devicesURL + id + '/info', this.options);
     return d;
+  }
+
+  getDevicesInRoom(roomID: number): Observable<Device[]> {
+    this.log(`fetched devices in room id=${roomID}`);
+    let devs = this.http.get<Device[]>(this.devicesURL + '/room/' + roomID, this.options);
+    return devs;
   }
 
   toggleDevice(id: number, state: boolean): Observable<Device> {
