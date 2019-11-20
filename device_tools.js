@@ -4,8 +4,6 @@
  * @version 1.0.0
  */
 
-var hue_tools = require('./hue_tools.js');
-var harmony_tools = require('./harmony_tools.js');
 var file_tools = require('./file_tools.js');
 
 /**
@@ -13,73 +11,6 @@ var file_tools = require('./file_tools.js');
  * @exports device_tools
  */
 module.exports = {
-    // /**
-    //  * Sends the formatted command to the connected Harmony Hub
-    //  * @param {Object} modules modules object from server.js
-    //  * @param {string} formattedCommand Harmony-specific command string, tells the hub what button to emulate
-    //  */
-    // sendHarmonyCommand: function(modules, formattedCommand, hubName) {
-    //     var hub = modules.harmony.hubs.filter(h => {
-    //         return h.hubName === hubName;
-    //     }).pop();//[hubInd];
-    //     hub.send('holdAction', 'action=' + formattedCommand + ':status=press');
-    // },
-    /**
-     * Sets the state of supported devices/protocols. Supported devices currently are:
-     * - TPLink
-     * - Tuyapi
-     * - Harmony devices (only sets/toggles power)
-     * @param {Object} device device object to set the state of
-     * @param {boolean} state true for on, false for off, undefined for toggle
-     * @param {Object} modules modules object from server.js
-     * @returns {Device} the new state of the device
-     */
-    setDeviceState: async function(device, state, modules) {
-
-        if (device.deviceProto === 'harmony') {
-            var control = state === true ? 'PowerOn' : 'PowerOff';
-            var powerControl = this.getHarmonyControl(modules, device.name, 'Power', control);
-
-            if (powerControl !== undefined) {
-                harmony_tools.sendHarmonyCommand(modules, powerControl.formattedCommand, device.belongsToHub);
-                power_state = state;
-                device.lastState = state;
-            } else {
-                console.log('Harmony control not found: Power ' + control);
-                return undefined;
-            }
-        } else if (device.deviceProto === 'hue') {
-            await hue_tools.setLightState(modules, device.hue.hueID, state);
-            device.lastState = state;
-            //if (ret[0]['success'] === undefined)
-            //    return undefined;
-        }
-        return device;
-    },
-    // /**
-    //  * Finds the specific Harmony control for the given input
-    //  * @param {Object} modules modules object from server.js
-    //  * @param {string} deviceName the name of the device to get the controls for
-    //  * @param {string} controlGroup the control group of the control, i.e. 'Power'
-    //  * @param {string} control the specific control, i.e. 'VolumeUp'
-    //  * @returns {Object} the object for the specified control
-    //  */
-    // getHarmonyControl: function(modules, deviceName, controlGroup, control) {
-    //     var selectedDevice = modules.harmony.devices.find((eachDevice) => {
-    //         return eachDevice.name === deviceName;
-    //     });
-    //     if (selectedDevice === undefined)
-    //         return undefined;
-    //     var selectedCG = selectedDevice.controlGroups.find((cg) => {
-    //             return cg.name === controlGroup;
-    //     });
-    //     if (selectedCG === undefined)
-    //         return undefined;
-    //     var selectedControl = selectedCG.controls.find((thisControl) => {
-    //         return thisControl.name === control;
-    //     });
-    //     return selectedControl;
-    // },
     /**
      * Converts the devices object to a .json friendly format
      * @param {Object} devices devices from server.js
@@ -155,63 +86,6 @@ module.exports = {
         //console.log(activities);
         return activities;
     },
-    /**
-     * Handles running activities provided all necessary objects.
-     * @param {Object} modules the modules object from server.js, which contains specific module functions
-     * @param {Object} activities the activities object from server.js, which holds all activities
-     * @param {Object} devices the devices object from server.js, which contains all devices
-     * @param {string} activityName name of the activity to be run
-     * @returns {Promise<boolean>} whether the activity ran successfully or not
-     */
-    runActivity: async function(modules, activities, devices, activityName) {
-        var activity = activities.find((eachActivity) => {
-            return eachActivity.name.toLowerCase() === activityName.toLowerCase();
-        });
-        console.log('running activity ' + activity.name);
-        activity.commands.forEach(async (command) => {
-
-            //if the command is a function, handle it here
-            if (command.function !== undefined) {
-                var funcParts = command.function.split(' ');
-                if (funcParts[0] === 'delay') 
-                    await delay(parseInt(funcParts[1]));
-                return;
-            }
-
-            //otherwise, get the device that is being controlled by this command
-            var commandingDevice = devices.find((eachDevice) => {
-                return eachDevice.name === command.device; //if this device matches the device name in the activity command
-            });
-
-            var controlParams = command.control.split(' ');
-            //if the control protocol is in the set of devices compatible with the setDeviceState function
-            if (controlParams[0] === 'tplink' || controlParams[0] === 'tuyapi') {
-                var newState;
-                if (controlParams[1] === 'PowerOff')
-                    newState = false;
-                else if (controlParams[1] === 'PowerOn')
-                    newState = true;
-                else if (controlParams[1] === 'PowerToggle')
-                    newState = undefined;
-                this.setDeviceState(commandingDevice, newState, modules);
-            } else if (controlParams[0] === 'harmony') { //else the device is a harmony controlled device
-                var controlGroup = controlParams[1];
-                var control = controlParams[2];
-                var selectedControl = this.getHarmonyControl(modules, commandingDevice.name, controlGroup, control);
-
-                if (selectedControl !== undefined) {
-                    harmony_tools.sendHarmonyCommand(modules, selectedControl.formattedCommand, commandingDevice.hubInd);
-
-                    //update last state of device if the is a power command
-                    if (controlGroup === 'Power')
-                        commandingDevice.lastState = control === 'PowerOn' ? true : false;
-                } else {
-                    console.log('Harmony control not found: ' + controlGroup + ' ' + control);
-                }
-            }
-        });
-    },
-
     /**
      * Creates an example json file for users to fill out with
      * Device data

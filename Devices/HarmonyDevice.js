@@ -39,6 +39,9 @@ class HarmonyDevice extends Device {
         this.controlGroups  = options.controlGroups;
         this.controller   = options.controller;
 
+        this.pollable = false;
+        this.unavailable = false;
+
         //hub = options;
 
     }
@@ -106,7 +109,7 @@ class HarmonyDevice extends Device {
      * Returns the last known state of the HarmonyDevice
      * @returns {boolean} the last known state of the HarmonyDevice
      */
-    getDeviceState() {
+    async getDeviceState() {
         return this.lastState;
     }
 

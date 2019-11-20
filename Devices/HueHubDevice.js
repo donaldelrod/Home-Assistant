@@ -36,6 +36,9 @@ class HueHubDevice extends Device {
 
         this.lights = [];
 
+        this.pollable = true;
+        this.unavailable = false;
+
     }
     
     /**
@@ -57,7 +60,8 @@ class HueHubDevice extends Device {
             roomID:             this.roomID,
             roomName:           this.roomName
         };
-    };
+        
+    }
 
     /**
      * Sets the state of all Hue devices connected
@@ -75,7 +79,7 @@ class HueHubDevice extends Device {
         this.lastStateString = this.lastState ? 'on' : 'off';
         
         return this.getSendableDevice();
-    };
+    }
 
     /**
      * Toggles the state of all Hue devices connected
@@ -131,7 +135,7 @@ class HueHubDevice extends Device {
             var hueDevices = await this.getAllLights();
             if (hueDevices === null) {
                 console.log('Home-Assistant was unable to connect to Hue Bridge at ' + this.ip + ':80');
-                return;
+                return false;
             }
             var i = 1;
             while(hueDevices[''+i] !== undefined) {
@@ -170,7 +174,8 @@ class HueHubDevice extends Device {
 
                 i++;
             }
-            console.log('Hue lights connected successfully')
+            console.log('Hue lights connected successfully');
+            return true;
         } catch (err) {
             console.log(err);
         }

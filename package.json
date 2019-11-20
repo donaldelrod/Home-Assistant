@@ -47,6 +47,7 @@
   "devDependencies": {
     "apidoc": "^0.17.7",
     "del": "^3.0.0",
+    "eslint": "^6.5.1",
     "gulp": "^4.0.2",
     "gulp-strip-debug": "^3.0.0",
     "gulp-uglify-es": "^1.0.4",

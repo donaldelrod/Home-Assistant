@@ -38,6 +38,9 @@ class HueDevice extends Device {
         this.hueID          = options.hueID;
 
         this.controller     = options.controller;
+
+        this.pollable = true;
+        this.unavailable = false;
     }
     
     /**
@@ -63,7 +66,7 @@ class HueDevice extends Device {
             roomID:             this.roomID,
             roomName:           this.roomName
         };
-    };
+    }
 
     /**
      * Sets the state of this Hue device
@@ -78,7 +81,7 @@ class HueDevice extends Device {
         this.lastStateString = this.lastState ? 'on' : 'off';
         
         return this.getSendableDevice();
-    };
+    }
 
     /**
      * Toggles the state of the Hue device

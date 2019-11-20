@@ -1,14 +1,14 @@
 {
     "files.exclude": {
+        "**/.DS_Store": true,
+        "**/.hg": true,
         "**/angular": true,
+        "**/bck": true,
+        "**/conf-backups": true,
+        "**/CVS": true,
         "**/electron": true,
         "**/hardware": true,
-        //"**/node_modules": true,
-        "**/.hg": true,
-        "**/CVS": true,
-        "**/.DS_Store": true,
-        "**/conf-backups": true,
-        "**/https*": true
-        //"**/*.bck*": true
+        "**/https*": true,
+        "**/node": true
     }
 }

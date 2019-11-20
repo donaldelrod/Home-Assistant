@@ -30,7 +30,8 @@ class Device {
      * This class provides an interface to allow devices to run setup after being created. This is useful for when devices must connect to a hub, or if other devices need to act on this one
      * @param {Device[]} devices the array of devices controlled by HomeAssistant
      */
-    setup(devices) {
+    setup() {
+        return true;
     }
     
     /**
@@ -51,7 +52,7 @@ class Device {
             roomID:             this.roomID,
             roomName:           this.roomName
         };
-    };
+    }
 
     /**
      * Interface function to set the state of this device
@@ -63,7 +64,7 @@ class Device {
         this.lastState = newState;
         this.lastStateString = this.lastState ? 'on' : 'off';
         return this.getSendableDevice();
-    };
+    }
 
     /**
      * Interface function to toggle the state of the device
@@ -80,7 +81,7 @@ class Device {
      * Interface function to get the state of the Device
      * @returns {boolean} the current state of the device
      */
-    getDeviceState() {
+    async getDeviceState() {
         return this.lastState;
     }
 

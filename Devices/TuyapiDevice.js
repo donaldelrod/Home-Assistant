@@ -30,7 +30,7 @@ class TuyapiDevice extends Device {
     // supportsDimmer; //: boolean;
 
 
-    constructor(d, options) {
+    constructor(d) {
         super(
             d.deviceID, 
             d.name, 
@@ -51,6 +51,9 @@ class TuyapiDevice extends Device {
             key: d.options.key,
             ip: d.ip
         });
+
+        this.pollable = true;
+        this.unavailable = true;
     }
 
     /**
@@ -81,7 +84,7 @@ class TuyapiDevice extends Device {
      * Gets the current state of the TuyapiDevice
      * @returns {boolean} the current state of the device
      */
-    getDeviceState() {
+    async getDeviceState() {
         return this.lastState;
     }
 
