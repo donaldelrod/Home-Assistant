@@ -1,0 +1,21 @@
+<div class="module">
+    <mat-expansion-panel>
+      <mat-expansion-panel-header class="no">
+        <mat-panel-title class="long">
+          <h4>{{routerDevice.Name | slice:0:16 | titlecase }}</h4>
+        </mat-panel-title>
+        <mat-panel-description>
+          {{ routerDevice.IP }}
+        </mat-panel-description>
+        
+      </mat-expansion-panel-header>
+      
+      MAC Address: {{ routerDevice.MAC | lowercase }} <br>
+      Connection Type: {{ routerDevice.ConnectionType }} <br>
+      Signal Strength: {{ routerDevice.SignalStrength }}
+
+      
+    </mat-expansion-panel>
+  
+    
+  </div>

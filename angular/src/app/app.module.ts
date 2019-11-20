@@ -16,7 +16,9 @@ import { ProfilesComponent } from './profiles/profiles.component';
 import { DeviceListComponent } from './device-list/device-list.component';
 import { DeviceCardComponent } from './device-card/device-card.component';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { MatSlideToggleModule } from '@angular/material/slide-toggle'
+import { MatSlideToggleModule } from '@angular/material/slide-toggle';
+import { MatExpansionModule } from '@angular/material/expansion';
+import { RouterCardComponent } from './router-card/router-card.component';
 
 @NgModule({
   declarations: [
@@ -29,7 +31,8 @@ import { MatSlideToggleModule } from '@angular/material/slide-toggle'
     RouterDevicesComponent,
     ProfilesComponent,
     DeviceListComponent,
-    DeviceCardComponent
+    DeviceCardComponent,
+    RouterCardComponent
   ],
   imports: [
     BrowserModule,
@@ -38,7 +41,8 @@ import { MatSlideToggleModule } from '@angular/material/slide-toggle'
     HttpClientModule,
     FlexLayoutModule,
     BrowserAnimationsModule,
-    MatSlideToggleModule
+    MatSlideToggleModule,
+    MatExpansionModule
   ],
   providers: [],
   bootstrap: [AppComponent]

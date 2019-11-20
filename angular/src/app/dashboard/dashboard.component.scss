@@ -1,15 +1,5 @@
-/* DashboardComponent's private CSS styles */
-[class*='col-'] {
-  float: left;
-  padding-right: 10px;
-  padding-bottom: 10px;
-}
-[class*='col-']:last-of-type {
-  padding-right: 0;
-}
-
 .devices-tab {
-  width: 30%;
+  width: 32%;
   position: relative;
   // z-index: 1;
   top: 20px;
@@ -44,62 +34,10 @@
   background: #607d8b;
   float: right;
 }
-  
-// .sidenav a {
-//   padding: 6px 8px 6px 16px;
-//   text-decoration: none;
-//   font-size: 25px;
-//   color: #2196F3;
-//   display: block;
-// }
-
-// .sidenav a:hover {
-//   color: #064579;
-// }
-
-a {
-  text-decoration: none;
-  height: 100% * 1/5;
-  color: rgb(64, 27, 105);
-}
-*, *:after, *:before {
-  -webkit-box-sizing: border-box;
-  -moz-box-sizing: border-box;
-  box-sizing: border-box;
-}
 h3 {
   text-align: center;
   margin-bottom: 0;
 }
 h4 {
   position: relative;
-}
-
-.grid {
-  margin: 1px;
-}
-.col-1-2 {
-  width: 50%;
-}
-.col-1-4 {
-  width: 25%;
-}
-.grid-pad {
-  padding: 10px 0;
-}
-.grid-pad > [class*='col-']:last-of-type {
-  padding-right: 20px;
-}
-@media (max-width: 600px) {
-  .module {
-    font-size: 10px;
-    max-height: 75px; }
-}
-@media (max-width: 1024px) {
-  .grid {
-    margin: 0;
-  }
-  .module {
-    min-width: 60px;
-  }
 }

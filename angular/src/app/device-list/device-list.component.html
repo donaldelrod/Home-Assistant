@@ -1,17 +1,17 @@
 <h2>&nbsp;&nbsp;Devices</h2>
-<ng-container *ngFor="let room of rooms">
+<mat-accordion *ngFor="let room of rooms">
   <h3>{{room}}</h3>
   <div fxLayout="row wrap" 
-    fxLayoutGap="10px" 
+    fxLayoutGap="5px" 
     fxLayoutAlign="flex-start" 
     fxLayout.lt-sm="column"
     class="device-panel">
     <ng-container *ngFor="let device of devices; let i=index">
       <app-device-card *ngIf="device.roomName === room"
-        fxFlex="0 1 calc(25% - 20px)" 
-        fxFlex.lt-md="0 1 calc(50% - 20px)"
+        fxFlex="0 1 calc(25% - 10px)" 
+        fxFlex.lt-md="0 1 calc(50% - 10px)"
         fxFlex.lt-sm="100%"
         [device]="device"></app-device-card>
-  </ng-container>
+    </ng-container>
   </div>
-</ng-container>
+</mat-accordion>
