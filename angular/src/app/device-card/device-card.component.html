@@ -1,0 +1,26 @@
+<div class="module">
+  <mat-expansion-panel  hideToggle>
+    <mat-expansion-panel-header class="no">
+      <mat-panel-title class="long">
+        <!-- <a routerLink="/device/detail/{{device.deviceID}}"> -->
+          <h4>{{device.name}}</h4>
+        <!-- </a> -->
+      </mat-panel-title>
+      <mat-panel-description>
+        <mat-slide-toggle 
+          class="toggleSwitch" 
+          *ngIf="device.isToggle"
+          (change)="setState(device, $event.checked)">
+        </mat-slide-toggle>
+      </mat-panel-description>
+      
+    </mat-expansion-panel-header>
+    
+    <mat-action-row>
+      
+    </mat-action-row>
+    
+  </mat-expansion-panel>
+
+  
+</div>

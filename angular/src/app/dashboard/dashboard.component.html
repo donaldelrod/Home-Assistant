@@ -1,15 +1,8 @@
 <h3>Dashboard</h3>
 <div class="devices-tab">
-  <h2>&nbsp;&nbsp;Devices</h2>
-    <div *ngFor="let device of devices" class="col-1-4">
-      <div class="module">
-        <a routerLink="/device/detail/{{device.deviceID}}">
-          <h4>{{ device.name }}</h4>
-        </a>
-        <button class="toggleButton" *ngIf="device.isToggle" (click)="toggleState(device, !device.lastState)">{{ device.lastStateString }}</button> 
-      </div>
-    </div>
+  <app-device-list></app-device-list>
 </div>
+
 <div class="router-tab">
   <h2>&nbsp;&nbsp;Devices on Router</h2>
   <app-router-devices></app-router-devices>

@@ -10,7 +10,8 @@ export class Device {
     lastStateString: string;
     ip: string;
     unavailable: boolean;
+    roomID: number;
+    roomName: string;
     harmony?: any;
     harmonyControl?: any;
 }
-    

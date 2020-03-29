@@ -1,9 +1,29 @@
 <div *ngIf="routerDevices">
+  <mat-accordion>
+    <div fxLayout="row wrap"
+     fxLayoutGap="5px"
+     fxLayoutAlign="flex-start"
+     fxLayout.lt-sm="column"
+     >
+      <ng-container *ngFor="let routerDevice of routerDevices">
+        <app-router-card 
+         fxFlex="0 1 calc(50% - 5px)" 
+         fxFlex.lt-md="0 1 calc(50% - 5px)"
+         fxFlex.lt-sm="100%"
+         [routerDevice]="routerDevice"></app-router-card>
+      </ng-container>
+    </div>
+    
+  </mat-accordion>
+
+</div>
+
+
+<!-- 
   <div class="col-1-2 router-device router-info" *ngFor="let rd of routerDevices">
     {{ rd.Name | slice:0:16 | titlecase }}<br>
     {{ rd.IP }}<br>
-    <!--<label>MAC: {{ rd.MAC | lowercase }}</label><br>
+    <label>MAC: {{ rd.MAC | lowercase }}</label><br>
      <label class="router-device">Conn. type: {{ rd.ConnectionType }}</label><br> -->
-    <!-- <label class="router-device">Signal strength: {{ rd.SignalStrength }}</label> -->
-  </div>
-</div>
+    <!-- <label class="router-device">Signal strength: {{ rd.SignalStrength }}</label>
+  </div> -->

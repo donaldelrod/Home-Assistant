@@ -25,7 +25,10 @@ class HarmonyDevice extends Device {
             d.groups, 
             d.lastState, 
             d.isToggle, 
-            d.lastStateString
+            d.lastStateString,
+            "",
+            d.roomID,
+            d.roomName
         );
 
         this.controlPort    = options.controlPort;
@@ -35,6 +38,9 @@ class HarmonyDevice extends Device {
         this.isManualPower  = options.isManualPower;
         this.controlGroups  = options.controlGroups;
         this.controller   = options.controller;
+
+        this.pollable = false;
+        this.unavailable = false;
 
         //hub = options;
 
@@ -75,7 +81,7 @@ class HarmonyDevice extends Device {
 
         this.logEvent('power-status', this.lastStateString)
 
-        return this;
+        return this.getSendableDevice();
     }
 
     /**
@@ -103,7 +109,7 @@ class HarmonyDevice extends Device {
      * Returns the last known state of the HarmonyDevice
      * @returns {boolean} the last known state of the HarmonyDevice
      */
-    getDeviceState() {
+    async getDeviceState() {
         return this.lastState;
     }
 
@@ -122,7 +128,9 @@ class HarmonyDevice extends Device {
             lastState:      this.lastState, 
             isToggle:       this.isToggle, 
             lastStateString:this.lastStateString,
-            ip:             this.ip
+            ip:             this.ip,
+            roomID:         this.roomID,
+            roomName:       this.roomName
         }    
     }
 

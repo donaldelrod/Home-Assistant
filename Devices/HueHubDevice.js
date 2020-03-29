@@ -27,12 +27,17 @@ class HueHubDevice extends Device {
             d.lastState, 
             d.isToggle, 
             d.lastStateString,
-            d.ip
+            d.ip,
+            d.roomID,
+            d.roomName
         );
 
         this.username = options.username;
 
         this.lights = [];
+
+        this.pollable = true;
+        this.unavailable = false;
 
     }
     
@@ -50,9 +55,13 @@ class HueHubDevice extends Device {
             groups:             this.groups, 
             lastState:          this.lastState, 
             isToggle:           this.isToggle, 
-            lastStateString:    this.lastStateString
+            lastStateString:    this.lastStateString,
+            ip:                 this.ip,
+            roomID:             this.roomID,
+            roomName:           this.roomName
         };
-    };
+        
+    }
 
     /**
      * Sets the state of all Hue devices connected
@@ -69,8 +78,8 @@ class HueHubDevice extends Device {
         this.lastState = newState;
         this.lastStateString = this.lastState ? 'on' : 'off';
         
-        return this;
-    };
+        return this.getSendableDevice();
+    }
 
     /**
      * Toggles the state of all Hue devices connected
@@ -86,7 +95,7 @@ class HueHubDevice extends Device {
         this.lastState = !this.lastState;
         this.lastStateString = this.lastState ? 'on' : 'off';
 
-        return this;
+        return this.getSendableDevice();
     }
 
     /**
@@ -126,22 +135,24 @@ class HueHubDevice extends Device {
             var hueDevices = await this.getAllLights();
             if (hueDevices === null) {
                 console.log('Home-Assistant was unable to connect to Hue Bridge at ' + this.ip + ':80');
-                return;
+                return false;
             }
             var i = 1;
             while(hueDevices[''+i] !== undefined) {
                 var hueDevice = hueDevices[''+i];
                 let t = new Device(
-                    devices.length, //deviceID
-                    hueDevice.name, //name
-                    hueDevice.type, //deviceType
-                    hueDevice.productid, //deviceKind
-                    'HueDevice', //deviceProto
-                    ['lights','hue'], //groups
-                    hueDevice.state.on, //lastState
-                    true, //isToggle
-                    hueDevice.state.on ? 'on' : 'off', //lastStateString
-                    this.ip //ip
+                    devices.length,                     //deviceID
+                    hueDevice.name,                     //name
+                    hueDevice.type,                     //deviceType
+                    hueDevice.productid,                //deviceKind
+                    'HueDevice',                        //deviceProto
+                    ['lights','hue'],                   //groups
+                    hueDevice.state.on,                 //lastState
+                    true,                               //isToggle
+                    hueDevice.state.on ? 'on' : 'off',  //lastStateString
+                    this.ip,                            //ip
+                    this.roomID,                        //roomID
+                    this.roomName                       //roomName
                 );
                 var tempDevice = new HueDevice(
                     t,
@@ -163,7 +174,8 @@ class HueHubDevice extends Device {
 
                 i++;
             }
-            console.log('Hue lights connected successfully')
+            console.log('Hue lights connected successfully');
+            return true;
         } catch (err) {
             console.log(err);
         }

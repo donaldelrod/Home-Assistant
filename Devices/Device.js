@@ -9,7 +9,7 @@
  */
 class Device {
     //ts file in angular folder
-    constructor(id, name, type, kind, proto, groups, lastState, isTogg, lastStateStr, ip) {
+    constructor(id, name, type, kind, proto, groups, lastState, isTogg, lastStateStr, ip, roomid, roomname) {
         this.deviceID       = id;
         this.name           = name;
         this.deviceType     = type;
@@ -20,14 +20,19 @@ class Device {
         this.isToggle       = isTogg;
         this.lastStateString = lastStateStr;
         this.ip             = ip;
+        this.roomID         = roomid;
+        this.roomName       = roomname;
         
         this.unavailable    = true;
     }
 
     /**
      * This class provides an interface to allow devices to run setup after being created. This is useful for when devices must connect to a hub, or if other devices need to act on this one
+     * @param {Device[]} devices the array of devices controlled by HomeAssistant
      */
-    setup() {}
+    setup() {
+        return true;
+    }
     
     /**
      * Returns Device object expected in the frontend
@@ -43,9 +48,11 @@ class Device {
             groups:             this.groups, 
             lastState:          this.lastState, 
             isToggle:           this.isToggle, 
-            lastStateString:    this.lastStateString
+            lastStateString:    this.lastStateString,
+            roomID:             this.roomID,
+            roomName:           this.roomName
         };
-    };
+    }
 
     /**
      * Interface function to set the state of this device
@@ -56,8 +63,8 @@ class Device {
     async setState(newState) {
         this.lastState = newState;
         this.lastStateString = this.lastState ? 'on' : 'off';
-        return this;
-    };
+        return this.getSendableDevice();
+    }
 
     /**
      * Interface function to toggle the state of the device
@@ -67,14 +74,14 @@ class Device {
     async toggleState() {
         this.lastState = !this.lastState;
         this.lastStateString = this.lastState ? 'on' : 'off';
-        return this;
+        return this.getSendableDevice();
     }
 
     /**
      * Interface function to get the state of the Device
      * @returns {boolean} the current state of the device
      */
-    getDeviceState() {
+    async getDeviceState() {
         return this.lastState;
     }
 
@@ -95,6 +102,5 @@ class Device {
     }
 
 }
-
 
 module.exports = Device;

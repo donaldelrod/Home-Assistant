@@ -32,7 +32,7 @@ class TPLinkDevice extends Device {
     // supportsDimmer; //: boolean;
 
 
-    constructor(d, options) {
+    constructor(d) {
         super(
             d.deviceID, 
             d.name, 
@@ -43,20 +43,13 @@ class TPLinkDevice extends Device {
             d.lastState, 
             d.isToggle, 
             d.lastStateString,
-            d.ip
+            d.ip,
+            d.roomID,
+            d.roomName
         );
 
-        
-        if (d.deviceKind === 'TPLink Bulb') {
-            this.tplink = TPClient.getBulb({host: d.ip});
-        } else if (d.deviceKind === 'TPLink Plug') {
-            this.tplink = TPClient.getPlug({host: d.ip});
-        }
-        
-        //this.tplink = null;
         this.sysinfo = '';
         this.mac = '';
-        //this.model = '';
         this.swVersion = '';
         this.hwVersion = '';
         this.tpid = 0;
@@ -66,7 +59,9 @@ class TPLinkDevice extends Device {
         this.oemid = '';
         this.alias = '';
         this.supportsDimmer = false;
-        // this.setup();
+        this.pollable = true;
+        this.unavailable = false;
+        
     }
 
     /**
@@ -74,6 +69,48 @@ class TPLinkDevice extends Device {
      * @async
      */
     async setup() {
+
+        // connect to the bulbs
+        try {
+            if (this.deviceKind === 'TPLink Bulb') {
+                this.tplink = TPClient.getBulb({host: this.ip});
+            } else if (this.deviceKind === 'TPLink Plug') {
+                this.tplink = TPClient.getPlug({host: this.ip});
+            }
+        } catch (err) {
+            // log the error and return false, signaling that the device was not successfully added
+            console.log(err);
+            this.unavailable = true;
+            this.tplink = null;
+            return false;
+        }
+
+        // another check for failure to add
+        if (this.tplink === null)
+            return false;
+        try {
+            this.sysinfo = await this.tplink.getSysInfo()
+            .catch( function (err) {
+                console.log('found the error');
+                console.log(err);
+                //this.unavailable = true;
+                return false;
+            }).finally( (ret) => {
+                if (ret === undefined || ret == false) {
+                    this.unavailable = true;
+                    return false;
+                }
+            });
+        } catch (err) {
+            console.log(err); 
+            this.sysinfo = null;
+            return null;
+        }
+        
+        //if null, device isn't currently connected
+        if (this.sysinfo === null)
+            return false;
+        
         //get device state every 5 seconds
         await this.tplink.startPolling(5000);
 
@@ -88,10 +125,6 @@ class TPLinkDevice extends Device {
             this.logEvent('power-status', 'off');
         });
 
-        this.sysinfo        = await this.tplink.getSysInfo().catch((err) => {return null});
-        //if null, device isn't currently connected
-        if (this.sysinfo === null)
-            return;
         this.mac            = this.sysinfo.mac;
         this.tpalias        = this.sysinfo.alias;
         this.oemid          = this.sysinfo.oemId;
@@ -103,6 +136,8 @@ class TPLinkDevice extends Device {
         this.tpname         = this.sysinfo.dev_name;
         this.supportsDimmer = this.sysinfo.brightness != null;
         this.unavailable    = false;
+
+        return true;
     }
 
     /**
@@ -148,7 +183,7 @@ class TPLinkDevice extends Device {
      * Returns the current state of the TPLink device
      * @returns {boolean} the last state of the TPLink device
      */
-    getDeviceState() {
+    async getDeviceState() {
         return this.tplink.relayState;
     }
 
@@ -168,6 +203,8 @@ class TPLinkDevice extends Device {
             isToggle:       this.isToggle, 
             lastStateString:this.lastStateString,
             ip:             this.ip,
+            roomID:         this.roomID,
+            roomName:       this.roomName,
             mac:            this.mac,
             swVersion:      this.swVersion,
             hwVersion:      this.hwVersion,

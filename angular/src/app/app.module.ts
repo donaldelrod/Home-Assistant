@@ -1,6 +1,7 @@
 import { BrowserModule } from '@angular/platform-browser';
 import { NgModule } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { FlexLayoutModule } from '@angular/flex-layout';
 
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
@@ -12,6 +13,12 @@ import { HttpClientModule } from '@angular/common/http';
 import { HarmonyControlsComponent } from './harmony-controls/harmony-controls.component';
 import { RouterDevicesComponent } from './router-devices/router-devices.component';
 import { ProfilesComponent } from './profiles/profiles.component';
+import { DeviceListComponent } from './device-list/device-list.component';
+import { DeviceCardComponent } from './device-card/device-card.component';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { MatSlideToggleModule } from '@angular/material/slide-toggle';
+import { MatExpansionModule } from '@angular/material/expansion';
+import { RouterCardComponent } from './router-card/router-card.component';
 
 @NgModule({
   declarations: [
@@ -22,13 +29,20 @@ import { ProfilesComponent } from './profiles/profiles.component';
     DashboardComponent,
     HarmonyControlsComponent,
     RouterDevicesComponent,
-    ProfilesComponent
+    ProfilesComponent,
+    DeviceListComponent,
+    DeviceCardComponent,
+    RouterCardComponent
   ],
   imports: [
     BrowserModule,
     AppRoutingModule,
     FormsModule,
-    HttpClientModule
+    HttpClientModule,
+    FlexLayoutModule,
+    BrowserAnimationsModule,
+    MatSlideToggleModule,
+    MatExpansionModule
   ],
   providers: [],
   bootstrap: [AppComponent]

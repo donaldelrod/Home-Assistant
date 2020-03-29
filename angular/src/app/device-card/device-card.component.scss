@@ -1,0 +1,48 @@
+a {
+    color: rgb(255, 255, 255);
+    text-decoration: none;
+}
+.toggleSwitch {
+    position: absolute;
+    display: inline-block;
+    text-align: center;
+    //width: 80%;
+    padding: 8px;
+    //text-transform: uppercase;
+    //border-radius: .725em;
+    //vertical-align: 20px;
+    bottom: 0px;
+    // right: 10px;
+    left: 0px; 
+    //float: left;
+}
+.module {
+    position: relative;
+    padding: 4px;
+    margin: 4px;
+    text-align: center;
+    color: #eee;
+
+    height: 90%;
+    width: 120px;
+
+    max-height: 150px;
+    min-height: 100px;
+    max-width: 180px;
+    min-width: 80px;
+    background-color: #607d8b;
+    border-radius: 5px;
+}
+.module:hover {
+    background-color: #eee;
+    cursor: pointer;
+    color: #607d8b;
+}
+.no {
+    background-color: #607d71;
+
+}
+
+.long {
+    height: 100%;
+}
