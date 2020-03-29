@@ -47,7 +47,7 @@ class HarmonyHubDevice extends Device {
     async setup(devices) {
         
         try {
-            let hub = await harmony(this.ip)
+            let hub = await harmony(this.ip);
 
             this.hub = hub;
             // gets all the devices connected to the hub

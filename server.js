@@ -103,6 +103,7 @@ class HomeAssistantServer {
                 var tempDevice;
                 try {
                     // create the base Device object
+                    // This is pretty dirty, need to find a cleaner way
                     tempDevice = new Device(
                         device.deviceID,
                         device.name,
@@ -256,7 +257,7 @@ class HomeAssistantServer {
         await this.processDevices({
             deviceModules: this.config.deviceModules
         });
-        
+
         await this.processPlugins(this.config.plugins);
         //await processModules(modules.list);
         //await activity_tools.processActivities(activities, scheduledFunctions, schedule);
