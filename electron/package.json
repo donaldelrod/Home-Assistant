@@ -10,6 +10,6 @@
   "author": "Donald Elrod",
   "license": "ISC",
   "devDependencies": {
-    "electron": "^3.0.11"
+    "electron": "^11.5.0"
   }
 }
